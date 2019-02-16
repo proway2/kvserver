@@ -74,15 +74,17 @@ func (kv *KVStorage) Delete(key string) bool {
 }
 
 // ResetUpdated - сброс признака обновления элемента в false
-func (kv *KVStorage) ResetUpdated(key string) {
+func (kv *KVStorage) ResetUpdated(key string) bool {
 	if len(key) == 0 {
-		return
+		return false
 	}
 	kv.mux.Lock()
 	defer kv.mux.Unlock()
 	if elem, ok := kv.kvstorage[key]; ok {
 		elem.Updated = false
+		return true
 	}
+	return false
 }
 
 // IsElemUpdated - получение признака был ли элемент обновлен
