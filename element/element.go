@@ -16,5 +16,5 @@ func (elem Element) IsTTLOver(ttl uint64) bool {
 		return true
 	}
 	res := time.Now().Unix() - elem.Timestamp
-	return uint64(res) >= ttl
+	return res >= int64(ttl)
 }
