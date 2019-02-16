@@ -1,0 +1,121 @@
+package main
+
+import (
+	"kvserver/kvstorage"
+	"net/http"
+	"reflect"
+	"testing"
+)
+
+func Test_getHandler(t *testing.T) {
+	type args struct {
+		stor *kvstorage.KVStorage
+	}
+	tests := []struct {
+		name string
+		args args
+		want func(w http.ResponseWriter, r *http.Request)
+	}{
+		{
+			name: "Создание обработчика URL",
+			args: args{
+				stor: &kvstorage.KVStorage{},
+			},
+			want: func(w http.ResponseWriter, r *http.Request) {},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getHandler(tt.args.stor); !reflect.DeepEqual(got, tt.want) {
+				// t.Error("getHandler() = %v, want %v", got, tt.want)
+
+			}
+		})
+	}
+}
+
+func Test_getKeyFromURL(t *testing.T) {
+	type args struct {
+		inps string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  string
+		want1 bool
+	}{
+		{
+			name:  "Пустая строка",
+			args:  args{inps: ""},
+			want:  "",
+			want1: false,
+		},
+		{
+			name:  "Строка менее 6 символов",
+			args:  args{inps: "abc"},
+			want:  "",
+			want1: false,
+		},
+		{
+			name:  "Строка стандартная > 6 символов",
+			args:  args{inps: "/key/fg"},
+			want:  "fg",
+			want1: true,
+		},
+		{
+			name:  "Строка 5 символов, без ключа",
+			args:  args{inps: "/key/"},
+			want:  "",
+			want1: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := getKeyFromURL(tt.args.inps)
+			if got != tt.want {
+				t.Errorf("getKeyFromURL() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("getKeyFromURL() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+// func Test_getCLIargs(t *testing.T) {
+// 	tests := []struct {
+// 		name  string
+// 		want  string
+// 		want1 int
+// 		want2 uint64
+// 	}{
+// 		// TODO: Add test cases.
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			got, got1, got2 := getCLIargs()
+// 			if got != tt.want {
+// 				t.Errorf("getCLIargs() got = %v, want %v", got, tt.want)
+// 			}
+// 			if got1 != tt.want1 {
+// 				t.Errorf("getCLIargs() got1 = %v, want %v", got1, tt.want1)
+// 			}
+// 			if got2 != tt.want2 {
+// 				t.Errorf("getCLIargs() got2 = %v, want %v", got2, tt.want2)
+// 			}
+// 		})
+// 	}
+// }
+
+// func Test_main(t *testing.T) {
+// 	tests := []struct {
+// 		name string
+// 	}{
+// 		// TODO: Add test cases.
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			main()
+// 		})
+// 	}
+// }
