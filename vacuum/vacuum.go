@@ -63,12 +63,12 @@ func (q *Lifo) cleanUp(elem *list.Element) {
 		// элемент был обновлен, просто удаляем его из очереди
 		q.queue.Remove(elem)
 		// отправляем обратно значение ключа, которое надо обновить
-		q.storage.ResetUpdated(key)
+		_ = q.storage.ResetUpdated(key)
 	} else {
 		// перед удалением из хранилища надо проверить TTL
 		if q.storage.IsElemTTLOver(key, q.ttl) {
-			q.storage.Delete(key) // удаление из хранилища
-			q.queue.Remove(elem)  // удаление из очереди
+			_ = q.storage.Delete(key) // удаление из хранилища
+			q.queue.Remove(elem)      // удаление из очереди
 		}
 	}
 }
