@@ -4,10 +4,14 @@ import (
 	"container/list"
 	"kvserver/element"
 	"kvserver/kvstorage"
-	"kvserver/kvtests"
 	"testing"
 	"time"
 )
+
+func createChanString() *chan string {
+	out := make(chan string, 10)
+	return &out
+}
 
 func fillStorage(kvs *kvstorage.KVStorage) {
 	kvals := []struct {
@@ -67,7 +71,7 @@ func TestLifo_Init(t *testing.T) {
 			q:    &Lifo{},
 			args: args{
 				stor: &kvstorage.KVStorage{},
-				in:   kvtests.CreateChanString(),
+				in:   createChanString(),
 				ttl:  10,
 			},
 			want: true,
@@ -115,7 +119,7 @@ func TestLifo_Run(t *testing.T) {
 }
 
 func TestLifo_cleanUp(t *testing.T) {
-	chanElm := kvtests.CreateChanString()
+	chanElm := createChanString()
 
 	emptyKVS := kvstorage.KVStorage{}
 
