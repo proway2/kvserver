@@ -52,11 +52,10 @@ func getHandler(stor *kvstorage.KVStorage) func(
 }
 
 func getKeyFromURL(inps string) (string, bool) {
-	key := inps[5:]
-	if len(key) == 0 {
+	if len(inps) < 6 {
 		return "", false
 	}
-	return key, true
+	return inps[5:], true
 }
 
 func getCLIargs() (string, int, uint64) {
