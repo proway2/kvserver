@@ -4,6 +4,7 @@ import (
 	"kvserver/element"
 	"sync"
 	"testing"
+	"time"
 )
 
 func createChanString() *chan string {
@@ -25,19 +26,24 @@ func fillStorageMap(storage *map[string]*element.Element) {
 		{
 			key: "key111",
 			elem: &element.Element{
-				Val: "key111 value",
+				Val:       "key111 value",
+				Updated:   false,
+				Timestamp: time.Now().Unix() - 100,
 			},
 		},
 		{
 			key: "key222",
 			elem: &element.Element{
-				Val: "key222 value 123456",
+				Val:       "key222 value 123456",
+				Updated:   true,
+				Timestamp: time.Now().Unix() + 100,
 			},
 		},
 		{
 			key: "empty key",
 			elem: &element.Element{
-				Val: "",
+				Val:     "",
+				Updated: true,
 			},
 		},
 	}
@@ -61,7 +67,6 @@ func TestKVStorage_Init(t *testing.T) {
 		args   args
 		want   bool
 	}{
-		// TODO: Add test cases.
 		{
 			name:   "Канал nil",
 			fields: fields{outElmChan: nil},
@@ -105,7 +110,6 @@ func TestKVStorage_Set(t *testing.T) {
 		args   args
 		want   bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Пустой ключ",
 			fields: fields{
@@ -175,7 +179,6 @@ func TestKVStorage_Get(t *testing.T) {
 		want   string
 		want1  bool
 	}{
-		// TODO: Add test cases.
 		{
 			name:   "Пустой ключ",
 			fields: fields{},
@@ -258,7 +261,6 @@ func TestKVStorage_Delete(t *testing.T) {
 		args   args
 		want   bool
 	}{
-		// TODO: Add test cases.
 		{
 			name:   "Пустой ключ",
 			fields: fields{},
@@ -312,124 +314,286 @@ func TestKVStorage_Delete(t *testing.T) {
 	}
 }
 
-// func TestKVStorage_ResetUpdated(t *testing.T) {
-// 	type fields struct {
-// 		kvstorage  map[string]*element.Element
-// 		mux        sync.Mutex
-// 		outElmChan *chan string
-// 	}
-// 	type args struct {
-// 		key string
-// 	}
-// 	tests := []struct {
-// 		name   string
-// 		fields fields
-// 		args   args
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			kv := &KVStorage{
-// 				kvstorage:  tt.fields.kvstorage,
-// 				mux:        tt.fields.mux,
-// 				outElmChan: tt.fields.outElmChan,
-// 			}
-// 			kv.ResetUpdated(tt.args.key)
-// 		})
-// 	}
-// }
+func TestKVStorage_ResetUpdated(t *testing.T) {
+	storage := createStorageMap()
+	fillStorageMap(&storage)
+	type fields struct {
+		kvstorage  map[string]*element.Element
+		mux        sync.Mutex
+		outElmChan *chan string
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name:   "Пустой ключ",
+			fields: fields{},
+			args:   args{""},
+			want:   false,
+		},
+		{
+			name: "Ключ длиной > 0, хранилище пустое",
+			fields: fields{
+				kvstorage: make(map[string]*element.Element),
+			},
+			args: args{"key1"},
+			want: false,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище отсутствует",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{"keyNNN"},
+			want: false,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{"key111"},
+			want: true,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище, значение пустое",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{"empty key"},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kv := &KVStorage{
+				kvstorage:  tt.fields.kvstorage,
+				mux:        tt.fields.mux,
+				outElmChan: tt.fields.outElmChan,
+			}
+			if got := kv.ResetUpdated(tt.args.key); got != tt.want {
+				t.Errorf(
+					"KVStorage.ResetUpdated() = %v, want %v", got, tt.want,
+				)
+			}
 
-// func TestKVStorage_IsElemUpdated(t *testing.T) {
-// 	type fields struct {
-// 		kvstorage  map[string]*element.Element
-// 		mux        sync.Mutex
-// 		outElmChan *chan string
-// 	}
-// 	type args struct {
-// 		key string
-// 	}
-// 	tests := []struct {
-// 		name   string
-// 		fields fields
-// 		args   args
-// 		want   bool
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			kv := &KVStorage{
-// 				kvstorage:  tt.fields.kvstorage,
-// 				mux:        tt.fields.mux,
-// 				outElmChan: tt.fields.outElmChan,
-// 			}
-// 			if got := kv.IsElemUpdated(tt.args.key); got != tt.want {
-// 				t.Errorf("KVStorage.IsElemUpdated() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
+		})
+	}
+}
 
-// func TestKVStorage_IsElemTTLOver(t *testing.T) {
-// 	type fields struct {
-// 		kvstorage  map[string]*element.Element
-// 		mux        sync.Mutex
-// 		outElmChan *chan string
-// 	}
-// 	type args struct {
-// 		key string
-// 		ttl uint64
-// 	}
-// 	tests := []struct {
-// 		name   string
-// 		fields fields
-// 		args   args
-// 		want   bool
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			kv := &KVStorage{
-// 				kvstorage:  tt.fields.kvstorage,
-// 				mux:        tt.fields.mux,
-// 				outElmChan: tt.fields.outElmChan,
-// 			}
-// 			if got := kv.IsElemTTLOver(tt.args.key, tt.args.ttl); got != tt.want {
-// 				t.Errorf("KVStorage.IsElemTTLOver() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
+func TestKVStorage_IsElemUpdated(t *testing.T) {
+	storage := createStorageMap()
+	fillStorageMap(&storage)
+	type fields struct {
+		kvstorage  map[string]*element.Element
+		mux        sync.Mutex
+		outElmChan *chan string
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name:   "Пустой ключ",
+			fields: fields{},
+			args:   args{""},
+			want:   false,
+		},
+		{
+			name: "Ключ длиной > 0, хранилище пустое",
+			fields: fields{
+				kvstorage: make(map[string]*element.Element),
+			},
+			args: args{"key1"},
+			want: false,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище отсутствует",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{"keyNNN"},
+			want: false,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище, элемент не обновлен",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{"key111"},
+			want: false,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище, элемент обновлен",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{"empty key"},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kv := &KVStorage{
+				kvstorage:  tt.fields.kvstorage,
+				mux:        tt.fields.mux,
+				outElmChan: tt.fields.outElmChan,
+			}
+			if got := kv.IsElemUpdated(tt.args.key); got != tt.want {
+				t.Errorf("KVStorage.IsElemUpdated() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
-// func TestKVStorage_IsInStorage(t *testing.T) {
-// 	type fields struct {
-// 		kvstorage  map[string]*element.Element
-// 		mux        sync.Mutex
-// 		outElmChan *chan string
-// 	}
-// 	type args struct {
-// 		key string
-// 	}
-// 	tests := []struct {
-// 		name   string
-// 		fields fields
-// 		args   args
-// 		want   bool
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			kv := &KVStorage{
-// 				kvstorage:  tt.fields.kvstorage,
-// 				mux:        tt.fields.mux,
-// 				outElmChan: tt.fields.outElmChan,
-// 			}
-// 			if got := kv.IsInStorage(tt.args.key); got != tt.want {
-// 				t.Errorf("KVStorage.IsInStorage() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
+func TestKVStorage_IsElemTTLOver(t *testing.T) {
+	storage := createStorageMap()
+	fillStorageMap(&storage)
+	type fields struct {
+		kvstorage  map[string]*element.Element
+		mux        sync.Mutex
+		outElmChan *chan string
+	}
+	type args struct {
+		key string
+		ttl uint64
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name:   "Пустой ключ",
+			fields: fields{},
+			args:   args{key: "", ttl: 10},
+			want:   false,
+		},
+		{
+			name: "Ключ длиной > 0, хранилище пустое",
+			fields: fields{
+				kvstorage: make(map[string]*element.Element),
+			},
+			args: args{key: "key1", ttl: 10},
+			want: true,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище отсутствует",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{key: "keyNNN", ttl: 10},
+			want: true,
+		},
+		{
+			name: "Устаревший элемент",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{key: "key111", ttl: 10},
+			want: true,
+		},
+		{
+			name: "Новый элемент",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{key: "key222", ttl: 10},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kv := &KVStorage{
+				kvstorage:  tt.fields.kvstorage,
+				mux:        tt.fields.mux,
+				outElmChan: tt.fields.outElmChan,
+			}
+			if got := kv.IsElemTTLOver(tt.args.key, tt.args.ttl); got != tt.want {
+				t.Errorf("KVStorage.IsElemTTLOver() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestKVStorage_IsInStorage(t *testing.T) {
+	storage := createStorageMap()
+	fillStorageMap(&storage)
+	type fields struct {
+		kvstorage  map[string]*element.Element
+		mux        sync.Mutex
+		outElmChan *chan string
+	}
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name:   "Пустой ключ",
+			fields: fields{},
+			args:   args{""},
+			want:   false,
+		},
+		{
+			name: "Ключ длиной > 0, хранилище пустое",
+			fields: fields{
+				kvstorage: make(map[string]*element.Element),
+			},
+			args: args{"key1"},
+			want: false,
+		},
+		{
+			name: "Ключ длиной > 0, хранилище пустое",
+			fields: fields{
+				kvstorage: make(map[string]*element.Element),
+			},
+			args: args{"key1"},
+			want: false,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище отсутствует",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{"keyNNN"},
+			want: false,
+		},
+		{
+			name: "Ключ длиной > 0, в хранилище",
+			fields: fields{
+				kvstorage: storage,
+			},
+			args: args{"key111"},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kv := &KVStorage{
+				kvstorage:  tt.fields.kvstorage,
+				mux:        tt.fields.mux,
+				outElmChan: tt.fields.outElmChan,
+			}
+			if got := kv.IsInStorage(tt.args.key); got != tt.want {
+				t.Errorf("KVStorage.IsInStorage() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
