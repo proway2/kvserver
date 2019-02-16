@@ -16,11 +16,11 @@
 ```bash
 $ kvserver -h
 Usage of kvserver:
--addr string
+  -addr string
       IP адрес для подключения сервера (default "127.0.0.1")
--port int
+  -port int
       номер порта для подключения (default 8080)
--ttl int
+  -ttl int
       время жизни элемента (ключ-значение) в хранилище, сек. (default 60)
 ```
 # API
