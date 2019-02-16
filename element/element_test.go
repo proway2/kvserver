@@ -49,7 +49,7 @@ func TestElement_IsTTLOver(t *testing.T) {
 			name:   "Значение TTL = 10, элемент новый",
 			fields: fields{Val: "test5", Timestamp: time.Now().Unix() + 100},
 			args:   args{ttl: 10},
-			want:   true,
+			want:   false,
 		},
 	}
 	for _, tt := range tests {
