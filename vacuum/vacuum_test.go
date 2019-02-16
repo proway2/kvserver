@@ -1,13 +1,47 @@
 package vacuum
 
 import (
+	"container/list"
+	"kvserver/element"
 	"kvserver/kvstorage"
+	"kvserver/kvtests"
 	"testing"
+	"time"
 )
 
-func createChanString() *chan string {
-	out := make(chan string, 10)
-	return &out
+func fillStorage(kvs *kvstorage.KVStorage) {
+	kvals := []struct {
+		elem *element.Element
+		key  string
+	}{
+		{
+			key: "key111",
+			elem: &element.Element{
+				Val: "key111 value",
+			},
+		},
+		{
+			key: "key222",
+			elem: &element.Element{
+				Val: "key222 value 123456",
+			},
+		},
+		{
+			key: "key333",
+			elem: &element.Element{
+				Val: "key333 value 123456",
+			},
+		},
+		{
+			key: "empty key",
+			elem: &element.Element{
+				Val: "",
+			},
+		},
+	}
+	for _, kv := range kvals {
+		kvs.Set(kv.key, kv.elem.Val)
+	}
 }
 
 func TestLifo_Init(t *testing.T) {
@@ -33,7 +67,7 @@ func TestLifo_Init(t *testing.T) {
 			q:    &Lifo{},
 			args: args{
 				stor: &kvstorage.KVStorage{},
-				in:   createChanString(),
+				in:   kvtests.CreateChanString(),
 				ttl:  10,
 			},
 			want: true,
@@ -48,52 +82,107 @@ func TestLifo_Init(t *testing.T) {
 	}
 }
 
-// func TestLifo_Run(t *testing.T) {
-// 	tests := []struct {
-// 		name string
-// 		q    *Lifo
-// 		want bool
-// 	}{
-// 		{
-// 			name: "Канал = хранилище = nil, ttl = 0",
-// 			q: &Lifo{
-// 				inpElemChan: nil,
-// 				storage:     nil,
-// 				ttl:         0,
-// 			},
-// 			want: false,
-// 		},
-// 		// {
-// 		// 	name: "Канал = хранилище = nil, ttl = 0",
-// 		// 	q: &Lifo{
-// 		// 		inpElemChan: createChanString(),
-// 		// 		storage:     &kvstorage.KVStorage{},
-// 		// 		ttl:         2,
-// 		// 	},
-// 		// 	want: false,
-// 		// },
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			tt.q.Run()
-// 		})
-// 	}
-// }
+func TestLifo_Run(t *testing.T) {
+	tests := []struct {
+		name string
+		q    *Lifo
+		want bool
+	}{
+		{
+			name: "Канал = хранилище = nil, ttl = 0",
+			q: &Lifo{
+				inpElemChan: nil,
+				storage:     nil,
+				ttl:         0,
+			},
+			want: false,
+		},
+		// {
+		// 	name: "Канал = хранилище = nil, ttl = 0",
+		// 	q: &Lifo{
+		// 		inpElemChan: createChanString(),
+		// 		storage:     &kvstorage.KVStorage{},
+		// 		ttl:         2,
+		// 	},
+		// 	want: false,
+		// },
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.q.Run()
+		})
+	}
+}
 
-// func TestLifo_cleanUp(t *testing.T) {
-// 	type args struct {
-// 		elem *list.Element
-// 	}
-// 	tests := []struct {
-// 		name string
-// 		q    *Lifo
-// 		args args
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			tt.q.cleanUp(tt.args.elem)
-// 		})
-// 	}
-// }
+func TestLifo_cleanUp(t *testing.T) {
+	chanElm := kvtests.CreateChanString()
+
+	emptyKVS := kvstorage.KVStorage{}
+
+	fullKVS := kvstorage.KVStorage{}
+	fullKVS.Init(chanElm)
+	fillStorage(&fullKVS)
+
+	elementNO := list.Element{Value: "test123"}
+	elementUPD := list.Element{Value: "key222"}
+	elementUPDTTLover := list.Element{Value: "key333"}
+
+	type args struct {
+		elem *list.Element
+	}
+	tests := []struct {
+		name string
+		q    *Lifo
+		args args
+	}{
+		{
+			name: "Элемента нет в хранилище, хранилище пустое",
+			q: &Lifo{
+				storage:     &emptyKVS,
+				queue:       list.List{},
+				inpElemChan: chanElm,
+				ttl:         1,
+			},
+			args: args{elem: &elementNO},
+		},
+		{
+			name: "Элемента нет в хранилище, хранилище не пустое",
+			q: &Lifo{
+				storage:     &fullKVS,
+				queue:       list.List{},
+				inpElemChan: chanElm,
+				ttl:         1,
+			},
+			args: args{elem: &elementNO},
+		},
+		{
+			name: "Элемента в хранилище и обновлен, но TTL не вышел",
+			q: &Lifo{
+				storage:     &fullKVS,
+				queue:       list.List{},
+				inpElemChan: chanElm,
+				ttl:         1,
+			},
+			args: args{elem: &elementUPD},
+		},
+		{
+			name: "Элемента в хранилище и обновлен, но TTL вышел",
+			q: &Lifo{
+				storage:     &fullKVS,
+				queue:       list.List{},
+				inpElemChan: chanElm,
+				ttl:         1,
+			},
+			args: args{elem: &elementUPDTTLover},
+		},
+	}
+	// иначе не будет работать TTL
+	time.Sleep(2 * time.Second)
+	// обновляем метку элемента
+	_ = fullKVS.Set(elementUPD.Value.(string), "new value 123")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.q.cleanUp(tt.args.elem)
+		})
+	}
+}
