@@ -28,7 +28,7 @@ func Test_getHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getHandler(tt.args.stor); !reflect.DeepEqual(got, tt.want) {
+			if got := getURLHandler(tt.args.stor); !reflect.DeepEqual(got, tt.want) {
 				// t.Error("getHandler() = %v, want %v", got, tt.want)
 
 			}
@@ -149,7 +149,7 @@ func Test_closure(t *testing.T) {
 	chanOut := make(chan string, 10)
 	storage.Init(&chanOut)
 
-	handler := getHandler(&storage)
+	handler := getURLHandler(&storage)
 	var writer *myResponseWriter
 	writer = &myResponseWriter{code: 200}
 
