@@ -5,8 +5,8 @@ cd $GOPATH
 $GO test kvserver/element \
 kvserver/kvstorage \
 kvserver/vacuum \
-kvserver \
+kvserver/router \
 -cover kvserver/element \
 kvserver/kvstorage \
 kvserver/vacuum \
-kvserver
+kvserver/router 
