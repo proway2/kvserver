@@ -3,6 +3,7 @@ package vacuum
 import (
 	"container/list"
 	"kvserver/kvstorage"
+	"time"
 )
 
 // Lifo - структура, описывающая очередь элементов, тип LIFO
@@ -37,12 +38,14 @@ func (q *Lifo) Run() {
 	// цикл на прием сообщений из канала и запись их в конец очереди
 	// при блокировании канала выполняется очистка очереди и удаление
 	// элементов с истекшим TTL
+	ttlPercentile := 25
+	sleepPeriod := float64(q.ttl) * float64(ttlPercentile) / 100.0
 	for {
 		select {
 		case elem := <-*q.inpElemChan:
 			q.queue.PushBack(elem)
 			q.cleanUp(q.queue.Front())
-		default:
+		case <-time.After(time.Duration(sleepPeriod) * time.Second):
 			if elem := q.queue.Front(); elem != nil {
 				q.cleanUp(elem)
 			}
