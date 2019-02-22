@@ -10,11 +10,11 @@ import (
 type KVStorage struct {
 	kvstorage  map[string]*element.Element
 	mux        sync.Mutex
-	outElmChan *chan string
+	outElmChan chan string
 }
 
 // Init - Функция инициализации хранилища
-func (kv *KVStorage) Init(out *chan string) bool {
+func (kv *KVStorage) Init(out chan string) bool {
 	if out == nil {
 		return false
 	}
@@ -39,7 +39,7 @@ func (kv *KVStorage) Set(key, value string) bool {
 	kv.mux.Unlock()
 
 	if kv.outElmChan != nil {
-		*kv.outElmChan <- key
+		kv.outElmChan <- key
 	}
 	return true
 }

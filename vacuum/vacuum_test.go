@@ -8,11 +8,6 @@ import (
 	"time"
 )
 
-func createChanString() *chan string {
-	out := make(chan string, 10)
-	return &out
-}
-
 func fillStorage(kvs *kvstorage.KVStorage) {
 	kvals := []struct {
 		elem *element.Element
@@ -51,7 +46,7 @@ func fillStorage(kvs *kvstorage.KVStorage) {
 func TestLifo_Init(t *testing.T) {
 	type args struct {
 		stor *kvstorage.KVStorage
-		in   *chan string
+		in   chan string
 		ttl  uint64
 	}
 	tests := []struct {
@@ -71,7 +66,7 @@ func TestLifo_Init(t *testing.T) {
 			q:    &Lifo{},
 			args: args{
 				stor: &kvstorage.KVStorage{},
-				in:   createChanString(),
+				in:   make(chan string, 10),
 				ttl:  10,
 			},
 			want: true,
@@ -119,7 +114,7 @@ func TestLifo_Run(t *testing.T) {
 }
 
 func TestLifo_cleanUp(t *testing.T) {
-	chanElm := createChanString()
+	chanElm := make(chan string, 10)
 
 	emptyKVS := kvstorage.KVStorage{}
 

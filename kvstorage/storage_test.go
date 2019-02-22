@@ -7,11 +7,6 @@ import (
 	"time"
 )
 
-func createChanString() *chan string {
-	out := make(chan string, 10)
-	return &out
-}
-
 func createStorageMap() map[string]*element.Element {
 	// res := make(map[string]*element.Element)
 	// return res
@@ -56,10 +51,10 @@ func TestKVStorage_Init(t *testing.T) {
 	type fields struct {
 		kvstorage  map[string]*element.Element
 		mux        sync.Mutex
-		outElmChan *chan string
+		outElmChan chan string
 	}
 	type args struct {
-		out *chan string
+		out chan string
 	}
 	tests := []struct {
 		name   string
@@ -76,7 +71,7 @@ func TestKVStorage_Init(t *testing.T) {
 		{
 			name:   "Канал не nil",
 			fields: fields{},
-			args:   args{createChanString()},
+			args:   args{make(chan string, 10)},
 			want:   true,
 		},
 	}
@@ -98,7 +93,7 @@ func TestKVStorage_Set(t *testing.T) {
 	type fields struct {
 		kvstorage  map[string]*element.Element
 		mux        sync.Mutex
-		outElmChan *chan string
+		outElmChan chan string
 	}
 	type args struct {
 		key   string
@@ -114,7 +109,7 @@ func TestKVStorage_Set(t *testing.T) {
 			name: "Пустой ключ",
 			fields: fields{
 				kvstorage:  make(map[string]*element.Element),
-				outElmChan: createChanString(),
+				outElmChan: make(chan string, 10),
 			},
 			args: args{"", "empty key"},
 			want: false,
@@ -132,7 +127,7 @@ func TestKVStorage_Set(t *testing.T) {
 			name: "Ключ длиной > 0, канал действующий",
 			fields: fields{
 				kvstorage:  make(map[string]*element.Element),
-				outElmChan: createChanString(),
+				outElmChan: make(chan string, 10),
 			},
 			args: args{"key2", "key2 value"},
 			want: true,
@@ -141,7 +136,7 @@ func TestKVStorage_Set(t *testing.T) {
 			name: "Ключ длиной > 0, пустое значение, канал действующий",
 			fields: fields{
 				kvstorage:  make(map[string]*element.Element),
-				outElmChan: createChanString(),
+				outElmChan: make(chan string, 10),
 			},
 			args: args{"key3", ""},
 			want: true,
@@ -167,7 +162,7 @@ func TestKVStorage_Get(t *testing.T) {
 	type fields struct {
 		kvstorage  map[string]*element.Element
 		mux        sync.Mutex
-		outElmChan *chan string
+		outElmChan chan string
 	}
 	type args struct {
 		key string
@@ -199,7 +194,7 @@ func TestKVStorage_Get(t *testing.T) {
 			name: "Ключ длиной > 0, в хранилище отсутствует",
 			fields: fields{
 				kvstorage:  storage,
-				outElmChan: createChanString(),
+				outElmChan: make(chan string, 10),
 			},
 			args:  args{"keyNNN"},
 			want:  "",
@@ -209,7 +204,7 @@ func TestKVStorage_Get(t *testing.T) {
 			name: "Ключ длиной > 0, в хранилище",
 			fields: fields{
 				kvstorage:  storage,
-				outElmChan: createChanString(),
+				outElmChan: make(chan string, 10),
 			},
 			args:  args{"key111"},
 			want:  "key111 value",
@@ -219,7 +214,7 @@ func TestKVStorage_Get(t *testing.T) {
 			name: "Ключ длиной > 0, в хранилище, значение пустое",
 			fields: fields{
 				kvstorage:  storage,
-				outElmChan: createChanString(),
+				outElmChan: make(chan string, 10),
 			},
 			args:  args{"empty key"},
 			want:  "",
@@ -250,7 +245,7 @@ func TestKVStorage_Delete(t *testing.T) {
 	type fields struct {
 		kvstorage  map[string]*element.Element
 		mux        sync.Mutex
-		outElmChan *chan string
+		outElmChan chan string
 	}
 	type args struct {
 		key string
@@ -320,7 +315,7 @@ func TestKVStorage_ResetUpdated(t *testing.T) {
 	type fields struct {
 		kvstorage  map[string]*element.Element
 		mux        sync.Mutex
-		outElmChan *chan string
+		outElmChan chan string
 	}
 	type args struct {
 		key string
@@ -393,7 +388,7 @@ func TestKVStorage_IsElemUpdated(t *testing.T) {
 	type fields struct {
 		kvstorage  map[string]*element.Element
 		mux        sync.Mutex
-		outElmChan *chan string
+		outElmChan chan string
 	}
 	type args struct {
 		key string
@@ -463,7 +458,7 @@ func TestKVStorage_IsElemTTLOver(t *testing.T) {
 	type fields struct {
 		kvstorage  map[string]*element.Element
 		mux        sync.Mutex
-		outElmChan *chan string
+		outElmChan chan string
 	}
 	type args struct {
 		key string
@@ -534,7 +529,7 @@ func TestKVStorage_IsInStorage(t *testing.T) {
 	type fields struct {
 		kvstorage  map[string]*element.Element
 		mux        sync.Mutex
-		outElmChan *chan string
+		outElmChan chan string
 	}
 	type args struct {
 		key string

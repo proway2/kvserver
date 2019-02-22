@@ -10,14 +10,14 @@ import (
 type Lifo struct {
 	storage     *kvstorage.KVStorage
 	queue       list.List
-	inpElemChan *chan string
+	inpElemChan chan string
 	ttl         uint64
 }
 
 // Init - функция инициализации структуры Lifo
 func (q *Lifo) Init(
 	stor *kvstorage.KVStorage,
-	in *chan string,
+	in chan string,
 	ttl uint64) bool {
 
 	if in == nil || stor == nil || ttl == 0 {
@@ -42,7 +42,7 @@ func (q *Lifo) Run() {
 	sleepPeriod := float64(q.ttl) * float64(ttlPercentile) / 100.0
 	for {
 		select {
-		case elem := <-*q.inpElemChan:
+		case elem := <-q.inpElemChan:
 			q.queue.PushBack(elem)
 			q.cleanUp(q.queue.Front())
 		case <-time.After(time.Duration(sleepPeriod) * time.Second):

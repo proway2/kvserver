@@ -41,13 +41,13 @@ func main() {
 	// инициализация хранилища
 	storage := &kvstorage.KVStorage{}
 	// storage.Init(nil)
-	if initRes := storage.Init(&outElmChan); !initRes {
+	if initRes := storage.Init(outElmChan); !initRes {
 		log.Fatal("Cannot initialize storage!")
 	}
 
 	// инициализация очистки
 	cleaner := vacuum.Lifo{}
-	if initRes := cleaner.Init(storage, &outElmChan, ttl); !initRes {
+	if initRes := cleaner.Init(storage, outElmChan, ttl); !initRes {
 		log.Fatal("Cannot initialize cleaner!")
 	}
 	// для очистки хранилища от старых элементов используем отдельный поток

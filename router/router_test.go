@@ -187,7 +187,7 @@ func (resp *myResponseWriter) getCode() int {
 func Test_closure(t *testing.T) {
 	storage := kvstorage.KVStorage{}
 	chanOut := make(chan string, 10)
-	storage.Init(&chanOut)
+	storage.Init(chanOut)
 
 	handler := GetURLrouter(&storage)
 	var writer *myResponseWriter
