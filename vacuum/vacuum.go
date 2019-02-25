@@ -3,7 +3,6 @@ package vacuum
 import (
 	"container/list"
 	"kvserver/kvstorage"
-	"log"
 	"time"
 )
 
@@ -45,17 +44,11 @@ func (q *Lifo) Run() {
 		sleepPeriod := q.getSleepPeriod()
 		select {
 		case elem := <-q.inpElemChan:
-			if q.queue.Len() == 0 {
-				log.Println("start queueing")
-			}
 			q.queue.PushBack(elem)
 			q.cleanUp(q.queue.Front())
 		case <-time.After(sleepPeriod):
 			if elem := q.queue.Front(); elem != nil {
 				q.cleanUp(elem)
-			}
-			if q.queue.Len() == 0 {
-				log.Println("\tno elements")
 			}
 		}
 	}
