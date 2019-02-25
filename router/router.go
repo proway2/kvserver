@@ -48,7 +48,7 @@ func creator(method string) (func(*kvstorage.KVStorage, string, *http.Request) (
 	return nil, false
 }
 
-// GEThandler - функция обработчика метода GET
+// methodGET - функция обработчика метода GET
 func methodGET(stor *kvstorage.KVStorage, key string, r *http.Request) (string, int) {
 	code := 200
 	// Получаем значение по ключу
@@ -61,7 +61,7 @@ func methodGET(stor *kvstorage.KVStorage, key string, r *http.Request) (string, 
 	return val, code
 }
 
-// POSThandler - функция обработчика метода POST
+// methodPOST - функция обработчика метода POST
 func methodPOST(stor *kvstorage.KVStorage, key string, r *http.Request) (string, int) {
 	// требуется для извлечения значений метода POST - заполняется r.Form
 	val := ""
