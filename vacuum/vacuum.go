@@ -93,10 +93,7 @@ func (q *Lifo) getSleepPeriod() time.Duration {
 		return time.Duration(0)
 	}
 
-	elemTime := time.Unix(
-		elemUnixTime,
-		0,
-	)
+	elemTime := time.Unix(elemUnixTime, 0)
 	ttlDuration := time.Duration(q.ttl * uint64(time.Second))
 	elemExpireTime := elemTime.Add(ttlDuration)
 	// надо проверить закончился TTL или нет
