@@ -100,15 +100,13 @@ func (q *Lifo) getSleepPeriod() time.Duration {
 	ttlDuration := time.Duration(q.ttl * uint64(time.Second))
 	elemExpireTime := elemTime.Add(ttlDuration)
 	// надо проверить закончился TTL или нет
-	if elemTime.Add(ttlDuration).Before(time.Now()) {
+	if elemExpireTime.Before(time.Now()) {
 		// надо срочно удалить этот элемент
 		return time.Duration(0)
 	}
 
 	sleepPeriodNS := float64(elemExpireTime.Sub(time.Now()).Nanoseconds()) / float64(q.ttlDelim)
-	sleepDuration := time.Duration(
-		sleepPeriodNS * float64(time.Nanosecond),
-	)
+	sleepDuration := time.Duration(sleepPeriodNS * float64(time.Nanosecond))
 	if sleepDuration.Nanoseconds() < 1.0 {
 		return time.Duration(1 * time.Nanosecond)
 	}
