@@ -3,6 +3,7 @@ package vacuum
 import (
 	"container/list"
 	"kvserver/kvstorage"
+	"log"
 	"time"
 )
 
@@ -12,6 +13,7 @@ type Lifo struct {
 	queue       list.List
 	inpElemChan chan string
 	ttl         uint64
+	ttlDelim    uint
 }
 
 // Init - функция инициализации структуры Lifo
@@ -27,6 +29,7 @@ func (q *Lifo) Init(
 	q.inpElemChan = in
 	q.queue.Init()
 	q.ttl = ttl
+	q.ttlDelim = 2 // hard coded делитель времени !
 	return true
 }
 
@@ -38,16 +41,21 @@ func (q *Lifo) Run() {
 	// цикл на прием сообщений из канала и запись их в конец очереди
 	// при блокировании канала выполняется очистка очереди и удаление
 	// элементов с истекшим TTL
-	ttlPercentile := 25
-	sleepPeriod := float64(q.ttl) * float64(ttlPercentile) / 100.0
 	for {
+		sleepPeriod := q.getSleepPeriod()
 		select {
 		case elem := <-q.inpElemChan:
+			if q.queue.Len() == 0 {
+				log.Println("start queueing")
+			}
 			q.queue.PushBack(elem)
 			q.cleanUp(q.queue.Front())
-		case <-time.After(time.Duration(sleepPeriod) * time.Second):
+		case <-time.After(sleepPeriod):
 			if elem := q.queue.Front(); elem != nil {
 				q.cleanUp(elem)
+			}
+			if q.queue.Len() == 0 {
+				log.Println("\tno elements")
 			}
 		}
 	}
@@ -74,4 +82,43 @@ func (q *Lifo) cleanUp(elem *list.Element) {
 			q.queue.Remove(elem)      // удаление из очереди
 		}
 	}
+}
+
+func (q *Lifo) getSleepPeriod() time.Duration {
+
+	element := q.queue.Front()
+	if element == nil {
+		return time.Duration(
+			float64(q.ttl) * float64(time.Second) / float64(q.ttlDelim),
+		)
+	}
+
+	elemUnixTime := q.storage.GetTimestamp(element.Value.(string))
+	// надо проверить правильность ответа времени элемента
+	if elemUnixTime == 0 {
+		// элемент в очереди, но не в хранилище - удалить из очереди
+		return time.Duration(0)
+	}
+
+	elemTime := time.Unix(
+		elemUnixTime,
+		0,
+	)
+	ttlDuration := time.Duration(q.ttl * uint64(time.Second))
+	elemExpireTime := elemTime.Add(ttlDuration)
+	// надо проверить закончился TTL или нет
+	if elemTime.Add(ttlDuration).Before(time.Now()) {
+		// надо срочно удалить этот элемент
+		return time.Duration(0)
+	}
+
+	sleepPeriodNS := float64(elemExpireTime.Sub(time.Now()).Nanoseconds()) / float64(q.ttlDelim)
+	sleepDuration := time.Duration(
+		sleepPeriodNS * float64(time.Nanosecond),
+	)
+	if sleepDuration.Nanoseconds() < 1.0 {
+		return time.Duration(1 * time.Nanosecond)
+	}
+
+	return sleepDuration
 }

@@ -59,6 +59,20 @@ func (kv *KVStorage) Get(key string) (string, bool) {
 	return "", false
 }
 
+// GetTimestamp - получить метку времени элемента
+func (kv *KVStorage) GetTimestamp(key string) int64 {
+	if len(key) == 0 {
+		return 0
+	}
+	kv.mux.Lock()
+	defer kv.mux.Unlock()
+	elem, ok := kv.kvstorage[key]
+	if ok {
+		return elem.Timestamp
+	}
+	return 0
+}
+
 // Delete - удаление значения по ключу
 func (kv *KVStorage) Delete(key string) bool {
 	if len(key) == 0 {
