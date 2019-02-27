@@ -5,16 +5,11 @@ import "time"
 // Element - структура описывающая один элемент хранилища
 type Element struct {
 	Val       string
-	Timestamp int64
-	Updated   bool
+	Timestamp time.Time
 }
 
 // IsTTLOver - принимает TTL и возвращает признак
-// должен ли элемент быть удален
-func (elem Element) IsTTLOver(ttl uint64) bool {
-	if ttl < 1 {
-		return true
-	}
-	res := time.Now().Unix() - elem.Timestamp
-	return res >= int64(ttl)
+// старше элемент переданного времени или нет
+func (elem Element) IsOlder(testTime time.Time) bool {
+	return elem.Timestamp.Before(testTime)
 }
