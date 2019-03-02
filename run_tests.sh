@@ -2,11 +2,9 @@
 GO=`which go`
 cd $GOPATH
 
-$GO test kvserver/element \
-kvserver/kvstorage \
+$GO test kvserver/kvstorage \
 kvserver/vacuum \
 kvserver/router \
--cover kvserver/element \
-kvserver/kvstorage \
+-cover kvserver/kvstorage \
 kvserver/vacuum \
 kvserver/router 
