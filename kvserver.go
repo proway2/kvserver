@@ -4,6 +4,7 @@ import (
 	"flag"
 	"kvserver/kvstorage"
 	"kvserver/router"
+	"kvserver/vacuum"
 	"log"
 	"net/http"
 	"strconv"
@@ -32,25 +33,21 @@ func getCLIargs() (string, int, uint64) {
 func main() {
 	// для дальнейшей работы надо или получить аргументы
 	// из командной строки или установить значения по умолчанию
-	addr, port, _ := getCLIargs()
-
-	// канал необходим для постановки в очередь элементов для очистителя
-	outElmChan := make(chan string)
+	addr, port, ttl := getCLIargs()
 
 	// инициализация хранилища
 	storage := &kvstorage.KVStorage{}
-	// storage.Init(nil)
-	if initRes := storage.Init(outElmChan); !initRes {
+	if initRes := storage.Init(); !initRes {
 		log.Fatal("Cannot initialize storage!")
 	}
 
 	// инициализация очистки
-	// cleaner := vacuum.Lifo{}
-	// if initRes := cleaner.Init(storage, outElmChan, ttl); !initRes {
-	// 	log.Fatal("Cannot initialize cleaner!")
-	// }
-	// // для очистки хранилища от старых элементов используем отдельный поток
-	// go cleaner.Run()
+	cleaner := vacuum.Lifo{}
+	if initRes := cleaner.Init(storage, ttl); !initRes {
+		log.Fatal("Cannot initialize cleaner!")
+	}
+	// для очистки хранилища от старых элементов используем отдельный поток
+	go cleaner.Run()
 
 	server := &http.Server{
 		Addr: addr + ":" + strconv.Itoa(port),
