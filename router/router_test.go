@@ -83,85 +83,6 @@ func Test_getKeyFromURL(t *testing.T) {
 	}
 }
 
-// func Test_creator(t *testing.T) {
-// 	type args struct {
-// 		method string
-// 	}
-// 	tests := []struct {
-// 		name  string
-// 		args  args
-// 		want  func(*kvstorage.KVStorage, string, *http.Request) (string, int)
-// 		want1 bool
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got, got1 := creator(tt.args.method)
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("creator() got = %v, want %v", got, tt.want)
-// 			}
-// 			if got1 != tt.want1 {
-// 				t.Errorf("creator() got1 = %v, want %v", got1, tt.want1)
-// 			}
-// 		})
-// 	}
-// }
-
-// func Test_methodGET(t *testing.T) {
-// 	type args struct {
-// 		stor *kvstorage.KVStorage
-// 		key  string
-// 		r    *http.Request
-// 	}
-// 	tests := []struct {
-// 		name  string
-// 		args  args
-// 		want  string
-// 		want1 int
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got, got1 := methodGET(tt.args.stor, tt.args.key, tt.args.r)
-// 			if got != tt.want {
-// 				t.Errorf("methodGET() got = %v, want %v", got, tt.want)
-// 			}
-// 			if got1 != tt.want1 {
-// 				t.Errorf("methodGET() got1 = %v, want %v", got1, tt.want1)
-// 			}
-// 		})
-// 	}
-// }
-
-// func Test_methodPOST(t *testing.T) {
-// 	type args struct {
-// 		stor *kvstorage.KVStorage
-// 		key  string
-// 		r    *http.Request
-// 	}
-// 	tests := []struct {
-// 		name  string
-// 		args  args
-// 		want  string
-// 		want1 int
-// 	}{
-// 		// TODO: Add test cases.
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got, got1 := methodPOST(tt.args.stor, tt.args.key, tt.args.r)
-// 			if got != tt.want {
-// 				t.Errorf("methodPOST() got = %v, want %v", got, tt.want)
-// 			}
-// 			if got1 != tt.want1 {
-// 				t.Errorf("methodPOST() got1 = %v, want %v", got1, tt.want1)
-// 			}
-// 		})
-// 	}
-// }
-
 type myResponseWriter struct {
 	code int
 }
@@ -186,8 +107,7 @@ func (resp *myResponseWriter) getCode() int {
 
 func Test_closure(t *testing.T) {
 	storage := kvstorage.KVStorage{}
-	chanOut := make(chan string, 10)
-	storage.Init(chanOut)
+	storage.Init()
 
 	handler := GetURLrouter(&storage)
 	var writer *myResponseWriter
