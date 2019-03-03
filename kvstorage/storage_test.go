@@ -1,88 +1,45 @@
 package kvstorage
 
 import (
+	"container/list"
 	"kvserver/element"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
 )
 
-func createStorageMap() map[string]*element.Element {
-	// res := make(map[string]*element.Element)
-	// return res
-	return make(map[string]*element.Element)
-}
-
-func fillStorageMap(storage *map[string]*element.Element) {
-	kvals := []struct {
-		elem *element.Element
-		key  string
-	}{
-		{
-			key: "key111",
-			elem: &element.Element{
-				Val:       "key111 value",
-				Updated:   false,
-				Timestamp: time.Now().Unix() - 100,
-			},
-		},
-		{
-			key: "key222",
-			elem: &element.Element{
-				Val:       "key222 value 123456",
-				Updated:   true,
-				Timestamp: time.Now().Unix() + 100,
-			},
-		},
-		{
-			key: "empty key",
-			elem: &element.Element{
-				Val:     "",
-				Updated: true,
-			},
-		},
-	}
-	for _, kv := range kvals {
-		(*storage)[kv.key] = kv.elem
-	}
-}
-
 func TestKVStorage_Init(t *testing.T) {
 	type fields struct {
-		kvstorage  map[string]*element.Element
-		mux        sync.Mutex
-		outElmChan chan string
-	}
-	type args struct {
-		out chan string
+		kvstorage   map[string]*element.Element
+		mux         sync.Mutex
+		queue       list.List
+		initialized bool
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		args   args
 		want   bool
 	}{
+		// Test cases.
 		{
-			name:   "Канал nil",
-			fields: fields{outElmChan: nil},
-			args:   args{nil},
+			name:   "Already initialized",
+			fields: fields{initialized: true},
 			want:   false,
 		},
 		{
-			name:   "Канал не nil",
-			fields: fields{},
-			args:   args{make(chan string, 10)},
-			want:   true,
+			name: "Normal run",
+			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kv := &KVStorage{
-				kvstorage:  tt.fields.kvstorage,
-				mux:        tt.fields.mux,
-				outElmChan: tt.fields.outElmChan,
+				kvstorage:   tt.fields.kvstorage,
+				queue:       tt.fields.queue,
+				initialized: tt.fields.initialized,
 			}
-			if got := kv.Init(tt.args.out); got != tt.want {
+			if got := kv.Init(); got != tt.want {
 				t.Errorf("KVStorage.Init() = %v, want %v", got, tt.want)
 			}
 		})
@@ -90,10 +47,15 @@ func TestKVStorage_Init(t *testing.T) {
 }
 
 func TestKVStorage_Set(t *testing.T) {
+	var kv KVStorage
+	kv.Init()
+	kv.Set("key1", "new key1 value")
+
 	type fields struct {
-		kvstorage  map[string]*element.Element
-		mux        sync.Mutex
-		outElmChan chan string
+		kvstorage   map[string]*element.Element
+		mux         sync.Mutex
+		queue       list.List
+		initialized bool
 	}
 	type args struct {
 		key   string
@@ -105,49 +67,46 @@ func TestKVStorage_Set(t *testing.T) {
 		args   args
 		want   bool
 	}{
+		// Test cases.
 		{
-			name: "Пустой ключ",
-			fields: fields{
-				kvstorage:  make(map[string]*element.Element),
-				outElmChan: make(chan string, 10),
-			},
-			args: args{"", "empty key"},
+			name: "Storage is not initialized",
 			want: false,
 		},
 		{
-			name: "Ключ длиной > 0, канал nil",
+			name: "Empty key",
+			args: args{"", "empty key"},
 			fields: fields{
-				kvstorage:  make(map[string]*element.Element),
-				outElmChan: nil,
+				kvstorage:   make(map[string]*element.Element),
+				initialized: true,
 			},
-			args: args{"key1", "key1 value"},
+			want: false,
+		},
+		{
+			name: "Appropriate key, empty value",
+			args: args{"key1", ""},
+			fields: fields{
+				kvstorage:   make(map[string]*element.Element),
+				initialized: true,
+			},
 			want: true,
 		},
 		{
-			name: "Ключ длиной > 0, канал действующий",
+			name: "Key already in storage",
+			args: args{"key1", "new key1 value"},
 			fields: fields{
-				kvstorage:  make(map[string]*element.Element),
-				outElmChan: make(chan string, 10),
+				kvstorage:   kv.kvstorage,
+				initialized: true,
+				queue:       kv.queue,
 			},
-			args: args{"key2", "key2 value"},
-			want: true,
-		},
-		{
-			name: "Ключ длиной > 0, пустое значение, канал действующий",
-			fields: fields{
-				kvstorage:  make(map[string]*element.Element),
-				outElmChan: make(chan string, 10),
-			},
-			args: args{"key3", ""},
 			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kv := &KVStorage{
-				kvstorage:  tt.fields.kvstorage,
-				mux:        tt.fields.mux,
-				outElmChan: tt.fields.outElmChan,
+				kvstorage:   tt.fields.kvstorage,
+				queue:       tt.fields.queue,
+				initialized: tt.fields.initialized,
 			}
 			if got := kv.Set(tt.args.key, tt.args.value); got != tt.want {
 				t.Errorf("KVStorage.Set() = %v, want %v", got, tt.want)
@@ -157,12 +116,15 @@ func TestKVStorage_Set(t *testing.T) {
 }
 
 func TestKVStorage_Get(t *testing.T) {
-	storage := createStorageMap()
-	fillStorageMap(&storage)
+	var kv KVStorage
+	kv.Init()
+	kv.Set("key11", "new key11 value")
+
 	type fields struct {
-		kvstorage  map[string]*element.Element
-		mux        sync.Mutex
-		outElmChan chan string
+		kvstorage   map[string]*element.Element
+		mux         sync.Mutex
+		queue       list.List
+		initialized bool
 	}
 	type args struct {
 		key string
@@ -174,59 +136,47 @@ func TestKVStorage_Get(t *testing.T) {
 		want   string
 		want1  bool
 	}{
+		// Test cases.
 		{
-			name:   "Пустой ключ",
-			fields: fields{},
-			args:   args{""},
+			name:   "Storage is not initialized",
+			fields: fields{initialized: true},
 			want:   "",
 			want1:  false,
 		},
 		{
-			name: "Ключ длиной > 0, хранилище пустое",
-			fields: fields{
-				kvstorage: make(map[string]*element.Element),
-			},
-			args:  args{"key1"},
+			name:  "Empty key",
+			args:  args{""},
 			want:  "",
 			want1: false,
 		},
 		{
-			name: "Ключ длиной > 0, в хранилище отсутствует",
+			name: "Key is not in storage",
+			args: args{"unknown key"},
 			fields: fields{
-				kvstorage:  storage,
-				outElmChan: make(chan string, 10),
+				kvstorage:   make(map[string]*element.Element),
+				initialized: true,
 			},
-			args:  args{"keyNNN"},
 			want:  "",
 			want1: false,
 		},
 		{
-			name: "Ключ длиной > 0, в хранилище",
+			name: "Normal key and in storage",
+			args: args{"key11"},
 			fields: fields{
-				kvstorage:  storage,
-				outElmChan: make(chan string, 10),
+				kvstorage:   kv.kvstorage,
+				queue:       kv.queue,
+				initialized: true,
 			},
-			args:  args{"key111"},
-			want:  "key111 value",
-			want1: true,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище, значение пустое",
-			fields: fields{
-				kvstorage:  storage,
-				outElmChan: make(chan string, 10),
-			},
-			args:  args{"empty key"},
-			want:  "",
+			want:  "new key11 value",
 			want1: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kv := &KVStorage{
-				kvstorage:  tt.fields.kvstorage,
-				mux:        tt.fields.mux,
-				outElmChan: tt.fields.outElmChan,
+				kvstorage:   tt.fields.kvstorage,
+				queue:       tt.fields.queue,
+				initialized: tt.fields.initialized,
 			}
 			got, got1 := kv.Get(tt.args.key)
 			if got != tt.want {
@@ -239,13 +189,91 @@ func TestKVStorage_Get(t *testing.T) {
 	}
 }
 
-func TestKVStorage_Delete(t *testing.T) {
-	storage := createStorageMap()
-	fillStorageMap(&storage)
+func TestKVStorage_OldestElementTime(t *testing.T) {
+	var kv KVStorage
+	kv.Init()
+	kv.Set("key11", "new key11 value")
+	elementTime := kv.kvstorage["key11"].Timestamp
+
 	type fields struct {
-		kvstorage  map[string]*element.Element
-		mux        sync.Mutex
-		outElmChan chan string
+		kvstorage   map[string]*element.Element
+		mux         sync.Mutex
+		queue       list.List
+		initialized bool
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    time.Time
+		wantErr bool
+	}{
+		// Test cases.
+		{
+			name:    "Storage is not initialized",
+			fields:  fields{initialized: false},
+			want:    time.Time{},
+			wantErr: true,
+		},
+		{
+			name: "Empty storage",
+			fields: fields{
+				kvstorage:   make(map[string]*element.Element),
+				initialized: true,
+				queue:       *list.New(),
+			},
+			want:    time.Time{},
+			wantErr: true,
+		},
+		{
+			name: "Normal operation",
+			fields: fields{
+				kvstorage:   kv.kvstorage,
+				queue:       kv.queue,
+				initialized: true,
+			},
+			want:    elementTime,
+			wantErr: false,
+		},
+		{
+			name: "INNORMAL OPERATION, NOT POSSIBLE!!!",
+			fields: fields{
+				kvstorage:   make(map[string]*element.Element),
+				initialized: true,
+				queue:       kv.queue,
+			},
+			want:    time.Time{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kv := &KVStorage{
+				kvstorage:   tt.fields.kvstorage,
+				queue:       tt.fields.queue,
+				initialized: tt.fields.initialized,
+			}
+			got, err := kv.OldestElementTime()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("KVStorage.OldestElementTime() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("KVStorage.OldestElementTime() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestKVStorage_Delete(t *testing.T) {
+	var kv KVStorage
+	kv.Init()
+	kv.Set("key11", "new key11 value")
+
+	type fields struct {
+		kvstorage   map[string]*element.Element
+		mux         sync.Mutex
+		queue       list.List
+		initialized bool
 	}
 	type args struct {
 		key string
@@ -256,51 +284,55 @@ func TestKVStorage_Delete(t *testing.T) {
 		args   args
 		want   bool
 	}{
+		// Test cases.
 		{
-			name:   "Пустой ключ",
-			fields: fields{},
+			name:   "Storage is not initialized",
+			fields: fields{initialized: false},
+			args:   args{"key1"},
+			want:   false,
+		},
+		{
+			name:   "Empty key",
+			fields: fields{initialized: true},
 			args:   args{""},
 			want:   false,
 		},
 		{
-			name: "Ключ длиной > 0, хранилище пустое",
+			name: "Good key, empty storage",
 			fields: fields{
-				kvstorage: make(map[string]*element.Element),
+				kvstorage:   make(map[string]*element.Element),
+				initialized: true,
 			},
 			args: args{"key1"},
 			want: false,
 		},
 		{
-			name: "Ключ длиной > 0, в хранилище отсутствует",
+			name: "Not found in storage",
 			fields: fields{
-				kvstorage: storage,
+				kvstorage:   kv.kvstorage,
+				queue:       kv.queue,
+				initialized: true,
 			},
-			args: args{"keyNNN"},
+			args: args{"not found"},
 			want: false,
 		},
 		{
-			name: "Ключ длиной > 0, в хранилище",
+			name: "Normal operation",
 			fields: fields{
-				kvstorage: storage,
+				kvstorage:   kv.kvstorage,
+				queue:       kv.queue,
+				initialized: true,
 			},
-			args: args{"key111"},
-			want: true,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище, значение пустое",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{"empty key"},
+			args: args{"key11"},
 			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kv := &KVStorage{
-				kvstorage:  tt.fields.kvstorage,
-				mux:        tt.fields.mux,
-				outElmChan: tt.fields.outElmChan,
+				kvstorage:   tt.fields.kvstorage,
+				queue:       tt.fields.queue,
+				initialized: tt.fields.initialized,
 			}
 			if got := kv.Delete(tt.args.key); got != tt.want {
 				t.Errorf("KVStorage.Delete() = %v, want %v", got, tt.want)
@@ -309,16 +341,19 @@ func TestKVStorage_Delete(t *testing.T) {
 	}
 }
 
-func TestKVStorage_ResetUpdated(t *testing.T) {
-	storage := createStorageMap()
-	fillStorageMap(&storage)
+func TestKVStorage_DeleteFrontIfOlder(t *testing.T) {
+	var kv KVStorage
+	kv.Init()
+	kv.Set("key11", "new key11 value")
+
 	type fields struct {
-		kvstorage  map[string]*element.Element
-		mux        sync.Mutex
-		outElmChan chan string
+		kvstorage   map[string]*element.Element
+		mux         sync.Mutex
+		queue       list.List
+		initialized bool
 	}
 	type args struct {
-		key string
+		ctxTime time.Time
 	}
 	tests := []struct {
 		name   string
@@ -326,268 +361,52 @@ func TestKVStorage_ResetUpdated(t *testing.T) {
 		args   args
 		want   bool
 	}{
+		// Test cases.
 		{
-			name:   "Пустой ключ",
-			fields: fields{},
-			args:   args{""},
+			name:   "Storage is not initialized",
+			fields: fields{initialized: false},
 			want:   false,
 		},
 		{
-			name: "Ключ длиной > 0, хранилище пустое",
+			name: "Empty storage",
 			fields: fields{
-				kvstorage: make(map[string]*element.Element),
+				kvstorage:   make(map[string]*element.Element),
+				initialized: true,
+				queue:       *list.New(),
 			},
-			args: args{"key1"},
+			args: args{time.Now()},
 			want: false,
 		},
 		{
-			name: "Ключ длиной > 0, в хранилище отсутствует",
+			name: "Element younger than NOW - 60 secs",
 			fields: fields{
-				kvstorage: storage,
+				kvstorage:   kv.kvstorage,
+				initialized: true,
+				queue:       kv.queue,
 			},
-			args: args{"keyNNN"},
+			args: args{time.Now().Add(-60 * time.Second)},
 			want: false,
 		},
 		{
-			name: "Ключ длиной > 0, в хранилище",
+			name: "Element older than NOW",
 			fields: fields{
-				kvstorage: storage,
+				kvstorage:   kv.kvstorage,
+				initialized: true,
+				queue:       kv.queue,
 			},
-			args: args{"key111"},
-			want: true,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище, значение пустое",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{"empty key"},
+			args: args{time.Now()},
 			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kv := &KVStorage{
-				kvstorage:  tt.fields.kvstorage,
-				mux:        tt.fields.mux,
-				outElmChan: tt.fields.outElmChan,
+				kvstorage:   tt.fields.kvstorage,
+				queue:       tt.fields.queue,
+				initialized: tt.fields.initialized,
 			}
-			if got := kv.ResetUpdated(tt.args.key); got != tt.want {
-				t.Errorf(
-					"KVStorage.ResetUpdated() = %v, want %v", got, tt.want,
-				)
-			}
-
-		})
-	}
-}
-
-func TestKVStorage_IsElemUpdated(t *testing.T) {
-	storage := createStorageMap()
-	fillStorageMap(&storage)
-	type fields struct {
-		kvstorage  map[string]*element.Element
-		mux        sync.Mutex
-		outElmChan chan string
-	}
-	type args struct {
-		key string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   bool
-	}{
-		{
-			name:   "Пустой ключ",
-			fields: fields{},
-			args:   args{""},
-			want:   false,
-		},
-		{
-			name: "Ключ длиной > 0, хранилище пустое",
-			fields: fields{
-				kvstorage: make(map[string]*element.Element),
-			},
-			args: args{"key1"},
-			want: false,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище отсутствует",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{"keyNNN"},
-			want: false,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище, элемент не обновлен",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{"key111"},
-			want: false,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище, элемент обновлен",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{"empty key"},
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kv := &KVStorage{
-				kvstorage:  tt.fields.kvstorage,
-				mux:        tt.fields.mux,
-				outElmChan: tt.fields.outElmChan,
-			}
-			if got := kv.IsElemUpdated(tt.args.key); got != tt.want {
-				t.Errorf("KVStorage.IsElemUpdated() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestKVStorage_IsElemTTLOver(t *testing.T) {
-	storage := createStorageMap()
-	fillStorageMap(&storage)
-	type fields struct {
-		kvstorage  map[string]*element.Element
-		mux        sync.Mutex
-		outElmChan chan string
-	}
-	type args struct {
-		key string
-		ttl uint64
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   bool
-	}{
-		{
-			name:   "Пустой ключ",
-			fields: fields{},
-			args:   args{key: "", ttl: 10},
-			want:   false,
-		},
-		{
-			name: "Ключ длиной > 0, хранилище пустое",
-			fields: fields{
-				kvstorage: make(map[string]*element.Element),
-			},
-			args: args{key: "key1", ttl: 10},
-			want: true,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище отсутствует",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{key: "keyNNN", ttl: 10},
-			want: true,
-		},
-		{
-			name: "Устаревший элемент",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{key: "key111", ttl: 10},
-			want: true,
-		},
-		{
-			name: "Новый элемент",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{key: "key222", ttl: 10},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kv := &KVStorage{
-				kvstorage:  tt.fields.kvstorage,
-				mux:        tt.fields.mux,
-				outElmChan: tt.fields.outElmChan,
-			}
-			if got := kv.IsElemTTLOver(tt.args.key, tt.args.ttl); got != tt.want {
-				t.Errorf("KVStorage.IsElemTTLOver() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestKVStorage_IsInStorage(t *testing.T) {
-	storage := createStorageMap()
-	fillStorageMap(&storage)
-	type fields struct {
-		kvstorage  map[string]*element.Element
-		mux        sync.Mutex
-		outElmChan chan string
-	}
-	type args struct {
-		key string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   bool
-	}{
-		{
-			name:   "Пустой ключ",
-			fields: fields{},
-			args:   args{""},
-			want:   false,
-		},
-		{
-			name: "Ключ длиной > 0, хранилище пустое",
-			fields: fields{
-				kvstorage: make(map[string]*element.Element),
-			},
-			args: args{"key1"},
-			want: false,
-		},
-		{
-			name: "Ключ длиной > 0, хранилище пустое",
-			fields: fields{
-				kvstorage: make(map[string]*element.Element),
-			},
-			args: args{"key1"},
-			want: false,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище отсутствует",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{"keyNNN"},
-			want: false,
-		},
-		{
-			name: "Ключ длиной > 0, в хранилище",
-			fields: fields{
-				kvstorage: storage,
-			},
-			args: args{"key111"},
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kv := &KVStorage{
-				kvstorage:  tt.fields.kvstorage,
-				mux:        tt.fields.mux,
-				outElmChan: tt.fields.outElmChan,
-			}
-			if got := kv.IsInStorage(tt.args.key); got != tt.want {
-				t.Errorf("KVStorage.IsInStorage() = %v, want %v", got, tt.want)
+			if got := kv.DeleteFrontIfOlder(tt.args.ctxTime); got != tt.want {
+				t.Errorf("KVStorage.DeleteFrontIfOlder() = %v, want %v", got, tt.want)
 			}
 		})
 	}
