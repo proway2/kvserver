@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// инициализация очистки
-	cleaner := vacuum.Lifo{}
+	cleaner := vacuum.Vacuum{}
 	if initRes := cleaner.Init(storage, ttl); !initRes {
 		log.Fatal("Cannot initialize cleaner!")
 	}
