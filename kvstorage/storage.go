@@ -23,6 +23,7 @@ func (kv *KVStorage) Init() bool {
 	}
 	kv.kvstorage = make(map[string]*element.Element)
 	kv.initialized = true
+	kv.queue.Init()
 	return true
 }
 
@@ -70,14 +71,14 @@ func (kv *KVStorage) Get(key string) (string, bool) {
 // OldestElementTime - получить метку времени старейшего элемента
 func (kv *KVStorage) OldestElementTime() (time.Time, error) {
 	if !kv.initialized {
-		return time.Time{}, errors.New("Storage is not initialized.")
+		return time.Time{}, errors.New("storage is not initialized")
 	}
 	kv.mux.Lock()
 	defer kv.mux.Unlock()
 
 	oldestElemInQueue := kv.queue.Front()
 	if oldestElemInQueue == nil {
-		return time.Time{}, errors.New("Not found in storage.")
+		return time.Time{}, errors.New("not found in storage")
 	}
 
 	key := oldestElemInQueue.Value.(string)
@@ -86,7 +87,7 @@ func (kv *KVStorage) OldestElementTime() (time.Time, error) {
 		return elem.Timestamp, nil
 	}
 	// WTF? Element is in queue, but not in the map?!
-	return time.Time{}, errors.New("Shit happens!")
+	return time.Time{}, errors.New("shit happens")
 }
 
 // Delete - delete element from storage by its key
@@ -134,6 +135,7 @@ func (kv *KVStorage) purgeElement(key string) {
 	// INTERNAL USE ONLY !!!
 	// CALL THIS FUNCTION WITHIN CRITICAL SECTION
 	// WHEN THREAD IS LOCKED !!!
+	// NOT INTENDED FOR SEPARATE USE !!!
 	kv.queue.Remove(kv.kvstorage[key].QueueElement)
 	delete(kv.kvstorage, key)
 }
