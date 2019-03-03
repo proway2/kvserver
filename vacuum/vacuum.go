@@ -33,14 +33,12 @@ func (q *Vacuum) Run() {
 	}
 	// we need to hit the oldest element periodically
 	for {
-		element, err := q.storage.OldestElementTime()
-		sleepPeriod := getSleepPeriod(element, err, q.ttl, q.ttlDelim)
+		elementTime, err := q.storage.OldestElementTime()
+		sleepPeriod := getSleepPeriod(elementTime, err, q.ttl, q.ttlDelim)
 		select {
 		case <-time.After(sleepPeriod):
 			testTime := time.Now().Add(
-				time.Duration(
-					-q.ttl * uint64(time.Second),
-				),
+				time.Duration(-q.ttl * uint64(time.Second)),
 			)
 			q.storage.DeleteFrontIfOlder(testTime)
 		}
