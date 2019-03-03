@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// Lifo - структура, описывающая очередь элементов, тип LIFO
-type Lifo struct {
+// Vacuum - struct for cleaner
+type Vacuum struct {
 	storage     *kvstorage.KVStorage
 	ttl         uint64
 	ttlDelim    uint
@@ -15,19 +15,19 @@ type Lifo struct {
 }
 
 // Init - функция инициализации структуры Lifo
-func (q *Lifo) Init(stor *kvstorage.KVStorage, ttl uint64) bool {
+func (q *Vacuum) Init(stor *kvstorage.KVStorage, ttl uint64) bool {
 	if stor == nil || q.initialized {
 		return false
 	}
 	q.storage = stor
 	q.ttl = ttl
-	q.ttlDelim = 2 // hard coded делитель времени !
+	q.ttlDelim = 2 // hard coded time delimiter !
 	q.initialized = true
 	return true
 }
 
 // Run - infinite storage cleaner
-func (q *Lifo) Run() {
+func (q *Vacuum) Run() {
 	if !q.initialized {
 		log.Fatalln("Cleaner is not properly initialized.")
 	}
