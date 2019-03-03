@@ -16,7 +16,7 @@ type Vacuum struct {
 
 // Init - функция инициализации структуры Lifo
 func (q *Vacuum) Init(stor *kvstorage.KVStorage, ttl uint64) bool {
-	if stor == nil || q.initialized {
+	if stor == nil || q.initialized || ttl == 0 {
 		return false
 	}
 	q.storage = stor
@@ -52,6 +52,11 @@ func getSleepPeriod(elementTime time.Time, err error, ttl uint64, ttlDelim uint)
 		return time.Duration(
 			float64(ttl) * float64(time.Second) / float64(ttlDelim),
 		)
+	}
+	// need to handle special case scenario when
+	// either no ttl or ttlDelim provided or these are wrong
+	if ttl < 1 || ttlDelim < 2 {
+		return time.Duration(1 * time.Second)
 	}
 	oldestElementFinalTime := elementTime.Add(
 		time.Duration(

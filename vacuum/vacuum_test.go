@@ -1,7 +1,7 @@
 package vacuum
 
 import (
-	"container/list"
+	"errors"
 	"kvserver/element"
 	"kvserver/kvstorage"
 	"testing"
@@ -43,30 +43,52 @@ func fillStorage(kvs *kvstorage.KVStorage) {
 	}
 }
 
-func TestLifo_Init(t *testing.T) {
+func TestVacuum_Init(t *testing.T) {
+	type fields struct {
+		storage     *kvstorage.KVStorage
+		ttl         uint64
+		ttlDelim    uint
+		initialized bool
+	}
 	type args struct {
 		stor *kvstorage.KVStorage
-		in   chan string
 		ttl  uint64
 	}
 	tests := []struct {
-		name string
-		q    *Lifo
-		args args
-		want bool
+		name   string
+		fields fields
+		args   args
+		want   bool
 	}{
+		// Test cases.
 		{
-			name: "Хранилище = канал = nil, ttl = 0",
-			q:    &Lifo{},
-			args: args{stor: nil, in: nil, ttl: 0},
+			name: "No storage provided.",
+			args: args{
+				ttl: 2,
+			},
 			want: false,
 		},
 		{
-			name: "Хранилище, канал != nil, ttl != 0",
-			q:    &Lifo{},
+			name: "Wrong TTL < 1",
 			args: args{
 				stor: &kvstorage.KVStorage{},
-				in:   make(chan string, 10),
+				ttl:  0,
+			},
+			want: false,
+		},
+		{
+			name: "Already initialized",
+			args: args{
+				stor: &kvstorage.KVStorage{},
+				ttl:  10,
+			},
+			fields: fields{initialized: true},
+			want:   false,
+		},
+		{
+			name: "Normal operation",
+			args: args{
+				stor: &kvstorage.KVStorage{},
 				ttl:  10,
 			},
 			want: true,
@@ -74,114 +96,118 @@ func TestLifo_Init(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.q.Init(tt.args.stor, tt.args.in, tt.args.ttl); got != tt.want {
-				t.Errorf("Lifo.Init() = %v, want %v", got, tt.want)
+			q := &Vacuum{
+				storage:     tt.fields.storage,
+				ttl:         tt.fields.ttl,
+				ttlDelim:    tt.fields.ttlDelim,
+				initialized: tt.fields.initialized,
+			}
+			if got := q.Init(tt.args.stor, tt.args.ttl); got != tt.want {
+				t.Errorf("Vacuum.Init() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestLifo_Run(t *testing.T) {
-	tests := []struct {
-		name string
-		q    *Lifo
-		want bool
-	}{
-		{
-			name: "Канал = хранилище = nil, ttl = 0",
-			q: &Lifo{
-				inpElemChan: nil,
-				storage:     nil,
-				ttl:         0,
-			},
-			want: false,
-		},
-		// {
-		// 	name: "Канал = хранилище = nil, ttl = 0",
-		// 	q: &Lifo{
-		// 		inpElemChan: createChanString(),
-		// 		storage:     &kvstorage.KVStorage{},
-		// 		ttl:         2,
-		// 	},
-		// 	want: false,
-		// },
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.q.Run()
-		})
-	}
-}
+// func TestVacuum_Run(t *testing.T) {
+// 	type fields struct {
+// 		storage     *kvstorage.KVStorage
+// 		ttl         uint64
+// 		ttlDelim    uint
+// 		initialized bool
+// 	}
+// 	tests := []struct {
+// 		name   string
+// 		fields fields
+// 	}{
+// 		// Test cases.
+// 		{
+// 			name:   "Already initialized",
+// 			fields: fields{initialized: false},
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			q := &Vacuum{
+// 				storage:     tt.fields.storage,
+// 				ttl:         tt.fields.ttl,
+// 				ttlDelim:    tt.fields.ttlDelim,
+// 				initialized: tt.fields.initialized,
+// 			}
+// 			q.Run()
+// 		})
+// 	}
+// }
 
-func TestLifo_cleanUp(t *testing.T) {
-	chanElm := make(chan string, 10)
-
-	emptyKVS := kvstorage.KVStorage{}
-
-	fullKVS := kvstorage.KVStorage{}
-	fullKVS.Init(chanElm)
-	fillStorage(&fullKVS)
-
-	elementNO := list.Element{Value: "test123"}
-	elementUPD := list.Element{Value: "key222"}
-	elementUPDTTLover := list.Element{Value: "key333"}
-
+func Test_getSleepPeriod(t *testing.T) {
 	type args struct {
-		elem *list.Element
+		elementTime time.Time
+		err         error
+		ttl         uint64
+		ttlDelim    uint
 	}
 	tests := []struct {
 		name string
-		q    *Lifo
 		args args
+		want time.Duration
 	}{
+		// Test cases.
 		{
-			name: "Элемента нет в хранилище, хранилище пустое",
-			q: &Lifo{
-				storage:     &emptyKVS,
-				queue:       list.List{},
-				inpElemChan: chanElm,
-				ttl:         1,
+			name: "No elements in queue",
+			args: args{
+				err:      errors.New("Testing: No elements in queue"),
+				ttl:      60,
+				ttlDelim: 2,
 			},
-			args: args{elem: &elementNO},
+			want: time.Duration(30 * time.Second),
 		},
 		{
-			name: "Элемента нет в хранилище, хранилище не пустое",
-			q: &Lifo{
-				storage:     &fullKVS,
-				queue:       list.List{},
-				inpElemChan: chanElm,
-				ttl:         1,
+			name: "No TTL provided",
+			args: args{
+				elementTime: time.Now(),
+				err:         nil,
+				ttlDelim:    3,
 			},
-			args: args{elem: &elementNO},
+			want: time.Duration(1 * time.Second),
 		},
 		{
-			name: "Элемента в хранилище и обновлен, но TTL не вышел",
-			q: &Lifo{
-				storage:     &fullKVS,
-				queue:       list.List{},
-				inpElemChan: chanElm,
-				ttl:         1,
+			name: "No TTL delimiter provided",
+			args: args{
+				elementTime: time.Now(),
+				err:         nil,
+				ttl:         60,
 			},
-			args: args{elem: &elementUPD},
+			want: time.Duration(1 * time.Second),
 		},
 		{
-			name: "Элемента в хранилище и обновлен, но TTL вышел",
-			q: &Lifo{
-				storage:     &fullKVS,
-				queue:       list.List{},
-				inpElemChan: chanElm,
-				ttl:         1,
+			name: "Expired element",
+			args: args{
+				elementTime: time.Now().Add((-100 * time.Second)),
+				err:         nil,
+				ttl:         60,
+				ttlDelim:    2,
 			},
-			args: args{elem: &elementUPDTTLover},
+			want: time.Duration(0 * time.Nanosecond),
+		},
+		{
+			name: "30 secs to now",
+			args: args{
+				elementTime: time.Now().Add((-30 * time.Second)),
+				err:         nil,
+				ttl:         60,
+				ttlDelim:    2,
+			},
+			want: time.Duration(15 * time.Second),
 		},
 	}
-	// иначе не будет работать TTL
-	time.Sleep(2 * time.Second)
-	// обновляем метку элемента
-	_ = fullKVS.Set(elementUPD.Value.(string), "new value 123")
+	var toleranceNS int64 = 1000000
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.q.cleanUp(tt.args.elem)
+			// if got := getSleepPeriod(tt.args.elementTime, tt.args.err, tt.args.ttl, tt.args.ttlDelim); got != tt.want {
+			got := getSleepPeriod(tt.args.elementTime, tt.args.err, tt.args.ttl, tt.args.ttlDelim)
+			if got.Nanoseconds() < tt.want.Nanoseconds()-toleranceNS || got.Nanoseconds() > tt.want.Nanoseconds()+toleranceNS {
+				t.Errorf("getSleepPeriod() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
