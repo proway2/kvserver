@@ -33,7 +33,8 @@ func (q *Lifo) Run() {
 	}
 	// we need to hit the oldest element periodically
 	for {
-		sleepPeriod := q.getSleepPeriod()
+		element, err := q.storage.OldestElementTime()
+		sleepPeriod := getSleepPeriod(element, err, q.ttl, q.ttlDelim)
 		select {
 		case <-time.After(sleepPeriod):
 			testTime := time.Now().Add(
@@ -46,24 +47,21 @@ func (q *Lifo) Run() {
 	}
 }
 
-func (q *Lifo) getSleepPeriod() time.Duration {
-	// to calculate sleeping time the oldest's element
-	// in queue time must be known
-	oldestElementTime, err := q.storage.OldestElementTime()
+func getSleepPeriod(elementTime time.Time, err error, ttl uint64, ttlDelim uint) time.Duration {
 	if err != nil {
 		return time.Duration(
-			float64(q.ttl) * float64(time.Second) / float64(q.ttlDelim),
+			float64(ttl) * float64(time.Second) / float64(ttlDelim),
 		)
 	}
-	oldestElementFinalTime := oldestElementTime.Add(
+	oldestElementFinalTime := elementTime.Add(
 		time.Duration(
-			int64(q.ttl) * int64(time.Second),
+			int64(ttl) * int64(time.Second),
 		),
 	)
 
 	timeDiffNS := float64(
 		oldestElementFinalTime.Sub(time.Now()).Nanoseconds(),
-	) / float64(q.ttlDelim)
+	) / float64(ttlDelim)
 
 	// to handle already expired elements must check for negative numbers
 	if timeDiffNS < 0.0 {
