@@ -12,7 +12,7 @@ import (
 func TestKVStorage_Init(t *testing.T) {
 	type fields struct {
 		kvstorage   map[string]*element.Element
-		mux         sync.Mutex
+		mux         *sync.Mutex
 		queue       list.List
 		initialized bool
 	}
@@ -53,7 +53,7 @@ func TestKVStorage_Set(t *testing.T) {
 
 	type fields struct {
 		kvstorage   map[string]*element.Element
-		mux         sync.Mutex
+		mux         *sync.Mutex
 		queue       list.List
 		initialized bool
 	}
@@ -122,7 +122,7 @@ func TestKVStorage_Get(t *testing.T) {
 
 	type fields struct {
 		kvstorage   map[string]*element.Element
-		mux         sync.Mutex
+		mux         *sync.Mutex
 		queue       list.List
 		initialized bool
 	}
@@ -197,7 +197,7 @@ func TestKVStorage_OldestElementTime(t *testing.T) {
 
 	type fields struct {
 		kvstorage   map[string]*element.Element
-		mux         sync.Mutex
+		mux         *sync.Mutex
 		queue       list.List
 		initialized bool
 	}
@@ -271,7 +271,7 @@ func TestKVStorage_Delete(t *testing.T) {
 
 	type fields struct {
 		kvstorage   map[string]*element.Element
-		mux         sync.Mutex
+		mux         *sync.Mutex
 		queue       list.List
 		initialized bool
 	}
@@ -348,7 +348,7 @@ func TestKVStorage_DeleteFrontIfOlder(t *testing.T) {
 
 	type fields struct {
 		kvstorage   map[string]*element.Element
-		mux         sync.Mutex
+		mux         *sync.Mutex
 		queue       list.List
 		initialized bool
 	}
