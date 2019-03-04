@@ -6,7 +6,7 @@ Server provides three types of operations:
 - getting value by its key
 - deleting value by its key
 
-Server cleans up the storage periodically from elements with expired TTL..
+Server cleans up the storage periodically from elements with expired TTL.
 
 # Features
 
@@ -18,7 +18,7 @@ Server cleans up the storage periodically from elements with expired TTL..
 # Installation
 В папке проекта запустить ```go install```
 
-# Запуск сервера
+# Usage
 Параметры командной строки:
 ```bash
 $ kvserver -h
