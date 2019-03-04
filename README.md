@@ -12,7 +12,7 @@ Server cleans up the storage periodically from elements with expired TTL.
 
 - all operations have time complexity of ```O(1)```, i.e. always run for constant time.    
 - hits TTL as much accurate as it's possible.    
-- lower CPU cycles consumption during
+- lower CPU cycles consumption during approximation and idle.    
 - делитель оставшегося времени всегда 2.
 
 # Installation
