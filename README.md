@@ -1,19 +1,19 @@
 # kvserver
-Simple yet fully functional key-value server based on HTTP protocol. All objects stored in RAM only. All operations run for constant time.
-Реализованы три пользовательские операции:
+Simple yet fully functional key-value server based on HTTP protocol. All objects stored in RAM only. All operations run for constant time.    
+Server provides three types of operations:
 
-- установка/обновление значения для ключа
-- получение значения для ключа
-- удаление значения для ключа
+- storing/updating value by its key
+- getting value by its key
+- deleting value by its key
 
-Периодически сервер проводит очистку хранилища от старых элементов, тех, у которых превышен TTL.
+Server cleans up the storage periodically from elements with expired TTL..
 
 # Features
 
-- все операции выполняются с временн*о*й сложностью ```O(1)```.    
-- в период простоя минимальное потребление ресурсов CPU.    
-- точность соблюдения TTL максимально возможная для данного алгоритма.    
-- делитель оставшегося времени всегда 2, минимальное время ожидания 1 нс.
+- all operations have time complexity of ```O(1)```, i.e. always run for constant time.    
+- hits TTL as much accurate as it's possible.    
+- lower CPU cycles consumption during
+- делитель оставшегося времени всегда 2.
 
 # Installation
 В папке проекта запустить ```go install```
@@ -32,7 +32,7 @@ Usage of kvserver:
 ```
 # API
 Базовый URL ```http://<host>:<port>/key/<key_name>```, где ```<key_name>``` - имя ключа для работы с хранилищем. Ключ и его значение могут быть только текстовыми.
-## Storing value by its key
+## Storing/Updating value by its key
 _HTTP метод_: ```POST```    
 _Имя параметра запроса для передачи данных_: ```value```    
 _Код состояния в случае успеха_: ```200```    
