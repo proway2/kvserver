@@ -1,5 +1,5 @@
 # kvserver
-Простой сервер хранения "ключ-значение" на основе протокола HTTP. Данные хранятся только в оперативной памяти.
+Simple yet fully functional key-value server based on HTTP protocol. All objects stored in RAM only. All operations run for constant time.
 Реализованы три пользовательские операции:
 
 - установка/обновление значения для ключа
