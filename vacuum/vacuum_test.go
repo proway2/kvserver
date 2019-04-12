@@ -2,46 +2,10 @@ package vacuum
 
 import (
 	"errors"
-	"kvserver/element"
 	"kvserver/kvstorage"
 	"testing"
 	"time"
 )
-
-func fillStorage(kvs *kvstorage.KVStorage) {
-	kvals := []struct {
-		elem *element.Element
-		key  string
-	}{
-		{
-			key: "key111",
-			elem: &element.Element{
-				Val: "key111 value",
-			},
-		},
-		{
-			key: "key222",
-			elem: &element.Element{
-				Val: "key222 value 123456",
-			},
-		},
-		{
-			key: "key333",
-			elem: &element.Element{
-				Val: "key333 value 123456",
-			},
-		},
-		{
-			key: "empty key",
-			elem: &element.Element{
-				Val: "",
-			},
-		},
-	}
-	for _, kv := range kvals {
-		kvs.Set(kv.key, kv.elem.Val)
-	}
-}
 
 func TestVacuum_Init(t *testing.T) {
 	type fields struct {
