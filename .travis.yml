@@ -1,0 +1,2 @@
+language: go
+gobuild_args: kvserver/kvstorage kvserver/vacuum kvserver/router
