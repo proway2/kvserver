@@ -1,3 +1,4 @@
 language: go
 script: go test -v
 # gobuild_args: kvserver/kvstorage kvserver/vacuum kvserver/router
+go_import_path: github.com/proway2/kvserver
