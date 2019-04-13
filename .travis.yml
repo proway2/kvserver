@@ -1,3 +1,3 @@
 language: go
 script: go test -v
-gobuild_args: kvserver/kvstorage kvserver/vacuum kvserver/router
+# gobuild_args: kvserver/kvstorage kvserver/vacuum kvserver/router
