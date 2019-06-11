@@ -6,20 +6,20 @@ Server provides three types of operations:
 - getting value by its key
 - deleting value by its key
 
-Server cleans up the storage periodically from elements with expired TTL.
+Key-value element is cleaned up when expired.
 
 # Features
 
 - all operations have time complexity of ```O(1)```, i.e. always run for constant time.    
 - hits TTL as much accurate as it's possible.    
 - lower CPU cycles consumption during approximation and idle.    
-- делитель оставшегося времени всегда 2.
+- TTL approximation's divider is always 2.
 
 # Installation
-В папке проекта запустить ```go install```
+Clone and run ```go install``` in project folder.
 
 # Usage
-Параметры командной строки:
+Command line arguments:
 ```bash
 $ kvserver -h
 Usage of kvserver:
@@ -28,33 +28,33 @@ Usage of kvserver:
   -port int
       номер порта для подключения (default 8080)
   -ttl uint
-      время жизни элемента (ключ-значение) в хранилище, сек. (default 60)
+      время жизни элемента (ключ-значение) в хранилище, sec. (default 60)
 ```
 # API
-Базовый URL ```http://<host>:<port>/key/<key_name>```, где ```<key_name>``` - имя ключа для работы с хранилищем. Ключ и его значение могут быть только текстовыми.
+Base URL ```http://<host>:<port>/key/<key_name>```, where ```<key_name>``` - is the name of the key to be stored. Key and its value are always string.
 ## Storing/Updating value by its key
-_HTTP метод_: ```POST```    
+_HTTP method_: ```POST```    
 _Имя параметра запроса для передачи данных_: ```value```    
 _Код состояния в случае успеха_: ```200```    
 _Код состояния в случае ошибки_: кода нет, такая ситуация воспринимается как крах сервера.    
 _Примечание_: при повторной установке значения существующего ключа, время существования записи продлевается.
 
 ## Getting value by its key
-_HTTP метод_: ```GET```    
+_HTTP method_: ```GET```    
 _Имя параметра запроса для передачи данных_: для получения из хранилища параметры не передаются.    
 _Код состояния в случае успеха_: ```200```, в теле ответа передается текстовое значение для заданного ключа.    
 _Код состояния в случае ошибки_: ```404```
 
 ## Deleting value by its key
-_HTTP метод_: ```POST```    
+_HTTP method_: ```POST```    
 _Имя параметра запроса для передачи данных_: для удаления из хранилища параметры не передаются.    
 _Код состояния в случае успеха_: ```200```    
 _Код состояния в случае ошибки_: ```404```
 
-При ошибочном запросе, возвращается код ошибки ```400```.
+When error is occured code ```400``` is returned by server.
 
 # Tests
-В папке проекта запустить ```run_test.sh```. Работает при наличии ```bash```.
+Run ```run_test.sh``` in project folder.
 
 # License
 GPL v3
