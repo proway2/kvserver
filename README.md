@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/proway2/kvserver.svg?branch=master)](https://travis-ci.org/proway2/kvserver)
+
 # kvserver
 Simple yet fully functional key-value server based on HTTP protocol. All objects stored in RAM only. All operations run for constant time.    
 Server provides three types of operations:
