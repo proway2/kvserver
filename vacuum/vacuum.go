@@ -1,9 +1,10 @@
 package vacuum
 
 import (
-	"kvserver/kvstorage"
 	"log"
 	"time"
+
+	"github.com/proway2/kvserver/kvstorage"
 )
 
 // Vacuum - struct for cleaner

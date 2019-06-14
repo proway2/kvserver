@@ -3,9 +3,10 @@ package kvstorage
 import (
 	"container/list"
 	"errors"
-	"kvserver/element"
 	"sync"
 	"time"
+
+	"github.com/proway2/kvserver/element"
 )
 
 // KVStorage - Структура с методами, описывающая хранилище

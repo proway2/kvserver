@@ -2,11 +2,12 @@ package kvstorage
 
 import (
 	"container/list"
-	"kvserver/element"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/proway2/kvserver/element"
 )
 
 func TestKVStorage_Init(t *testing.T) {

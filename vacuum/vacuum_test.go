@@ -2,9 +2,10 @@ package vacuum
 
 import (
 	"errors"
-	"kvserver/kvstorage"
 	"testing"
 	"time"
+
+	"github.com/proway2/kvserver/kvstorage"
 )
 
 func TestVacuum_Init(t *testing.T) {

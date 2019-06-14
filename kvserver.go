@@ -2,12 +2,13 @@ package main
 
 import (
 	"flag"
-	"kvserver/kvstorage"
-	"kvserver/router"
-	"kvserver/vacuum"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/proway2/kvserver/kvstorage"
+	"github.com/proway2/kvserver/router"
+	"github.com/proway2/kvserver/vacuum"
 )
 
 func getCLIargs() (string, int, uint64) {

@@ -2,8 +2,9 @@ package router
 
 import (
 	"fmt"
-	"kvserver/kvstorage"
 	"net/http"
+
+	"github.com/proway2/kvserver/kvstorage"
 )
 
 // GetURLrouter - возвращает функцию маршрутизатор HTTP запросов в зависимости от типа.
