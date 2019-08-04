@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/proway2/kvserver.svg?branch=master)](https://travis-ci.org/proway2/kvserver)
 
 # kvserver
-Simple yet fully functional key-value server based on HTTP protocol. All objects stored in RAM only. All operations run for constant time.    
+Simple yet fully functional key-value storage server based on HTTP protocol. All objects stored in RAM only. All operations run for constant time.    
 Server provides three types of operations:
 
 - storing/updating value by its key
@@ -38,20 +38,20 @@ Base URL ```http://<host>:<port>/key/<key_name>```, where ```<key_name>``` - is 
 _HTTP method_: ```POST```    
 _Имя параметра запроса для передачи данных_: ```value```    
 _Код состояния в случае успеха_: ```200```    
-_Код состояния в случае ошибки_: кода нет, такая ситуация воспринимается как крах сервера.    
+_Error code_: кода нет, такая ситуация воспринимается как крах сервера.    
 _Примечание_: при повторной установке значения существующего ключа, время существования записи продлевается.
 
 ## Getting value by its key
 _HTTP method_: ```GET```    
 _Имя параметра запроса для передачи данных_: для получения из хранилища параметры не передаются.    
 _Код состояния в случае успеха_: ```200```, в теле ответа передается текстовое значение для заданного ключа.    
-_Код состояния в случае ошибки_: ```404```
+_Error code_: ```404```
 
 ## Deleting value by its key
 _HTTP method_: ```POST```    
 _Имя параметра запроса для передачи данных_: для удаления из хранилища параметры не передаются.    
 _Код состояния в случае успеха_: ```200```    
-_Код состояния в случае ошибки_: ```404```
+_Error code_: ```404```
 
 When error is occured code ```400``` is returned by server.
 
