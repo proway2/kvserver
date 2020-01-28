@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/proway2/kvserver.svg?branch=master)](https://travis-ci.org/proway2/kvserver)
+[![Go Report Card](https://goreportcard.com/badge/github.com/proway2/kvserver)](https://goreportcard.com/report/github.com/proway2/kvserver)
 
 # kvserver
 Simple yet fully functional key-value storage server based on HTTP protocol. All objects stored in RAM only. All operations run for constant time.    
