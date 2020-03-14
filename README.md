@@ -2,14 +2,13 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/proway2/kvserver)](https://goreportcard.com/report/github.com/proway2/kvserver)
 
 # kvserver
-Simple yet fully functional key-value storage server based on HTTP protocol. All objects stored in RAM only. All operations run for constant time.    
+Simple yet fully functional in-memory key-value storage server based on HTTP protocol with elements purged based on TTL. All operations run for constant time.    
 Server provides three types of operations:
 
 - storing/updating value by its key
 - getting value by its key
 - deleting value by its key
-
-Key-value element is cleaned up when expired.
+- key-value element is cleaned up when expired.
 
 # Features
 
@@ -37,20 +36,20 @@ Usage of kvserver:
 Base URL ```http://<host>:<port>/key/<key_name>```, where ```<key_name>``` - is the name of the key to be stored. Key and its value are always string.
 ## Storing/Updating value by its key
 _HTTP method_: ```POST```    
-_Имя параметра запроса для передачи данных_: ```value```    
+_Request's parameter name_: ```value```    
 _Success code_: ```200```    
-_Error code_: кода нет, такая ситуация воспринимается как крах сервера.    
-_Примечание_: при повторной установке значения существующего ключа, время существования записи продлевается.
+_Error code_: no code, this is a crash.    
+_Note_: TTL is reset for any subsequent requests for the same key.
 
 ## Getting value by its key
 _HTTP method_: ```GET```    
-_Имя параметра запроса для передачи данных_: для получения из хранилища параметры не передаются.    
-_Success code_: ```200```, в теле ответа передается текстовое значение для заданного ключа.    
+_Request's parameter name_: no parameter is needed.    
+_Success code_: ```200```, response's body contains string value for the key.    
 _Error code_: ```404```
 
 ## Deleting value by its key
 _HTTP method_: ```POST```    
-_Имя параметра запроса для передачи данных_: для удаления из хранилища параметры не передаются.    
+_Request's parameter name_: no parameter is needed.    
 _Success code_: ```200```    
 _Error code_: ```404```
 
