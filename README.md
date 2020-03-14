@@ -31,7 +31,7 @@ Usage of kvserver:
   -port int
     	port to listen to (default 8080)
   -ttl uint
-    	element''s (key-value) lifetime in the storage, secs. (default 60)
+    	element's (key-value) lifetime in the storage, secs. (default 60)
 ```
 # API
 Base URL ```http://<host>:<port>/key/<key_name>```, where ```<key_name>``` - is the name of the key to be stored. Key and its value are always string.
