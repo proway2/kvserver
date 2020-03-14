@@ -3,19 +3,19 @@
 
 # kvserver
 Simple yet fully functional in-memory key-value storage server based on HTTP protocol with elements purged based on TTL. All operations run for constant time.    
-Server provides three types of operations:
+Operations provided by server:
 
 - storing/updating value by its key
 - getting value by its key
 - deleting value by its key
-- key-value element is cleaned up when expired.
+- key-value element is cleaned up when expired (works automatically).
 
 # Features
 
 - all operations have time complexity of ```O(1)```, i.e. always run for constant time.    
 - hits TTL as much accurate as it's possible.    
 - lower CPU cycles consumption during approximation and idle.    
-- TTL approximation's divider is always 2.
+- TTL approximation's divider is always 2, i.e. next check time = current time + (time to the next element to purge)/2.
 
 # Installation
 Clone and run ```go install``` in project folder.
