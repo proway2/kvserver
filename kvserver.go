@@ -15,17 +15,17 @@ func getCLIargs() (string, int, uint64) {
 	ttlP := flag.Uint64(
 		"ttl",
 		60,
-		"время жизни элемента (ключ-значение) в хранилище, сек.",
+		"element's (key-value) lifetime in the storage, secs.",
 	)
 	addr := flag.String(
 		"addr",
 		"127.0.0.1",
-		"IP адрес для подключения сервера",
+		"IP address to bind to",
 	)
 	port := flag.Int(
 		"port",
 		8080,
-		"номер порта для подключения",
+		"port to listen to",
 	)
 	flag.Parse()
 	return *addr, *port, *ttlP
