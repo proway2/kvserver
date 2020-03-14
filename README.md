@@ -27,11 +27,11 @@ Command line arguments:
 $ kvserver -h
 Usage of kvserver:
   -addr string
-      IP адрес для подключения сервера (default "127.0.0.1")
+    	IP address to bind to (default "127.0.0.1")
   -port int
-      номер порта для подключения (default 8080)
+    	port to listen to (default 8080)
   -ttl uint
-      время жизни элемента (ключ-значение) в хранилище, sec. (default 60)
+    	element''s (key-value) lifetime in the storage, secs. (default 60)
 ```
 # API
 Base URL ```http://<host>:<port>/key/<key_name>```, where ```<key_name>``` - is the name of the key to be stored. Key and its value are always string.
