@@ -14,7 +14,7 @@ git:
 
 # Skip the install step. Don't `go get` dependencies. Only build with the code
 # in vendor/
-install: true
+# install: true
 
 # Don't email me the results of the test runs.
 notifications:
@@ -22,13 +22,12 @@ notifications:
 
 # Anything in before_script that returns a nonzero exit code will flunk the
 # build and immediately stop. It's sorta like having set -e enabled in bash.
-# Make sure golangci-lint is vendored.
-# before_script:
-  # - go get -u golang.org/x/lint/golint
+before_script:
+  - go get -u golang.org/x/lint/golint
 
 # script always runs to completion (set +e). If we have linter issues AND a
 # failing test, we want to see both. Configure golangci-lint with a
 # .golangci.yml file at the top level of your repo.
 script:
-  # - golangci-lint run       # run a bunch of code checkers/linters in parallel
-  - go test -v -race ./...  # Run all the tests with the race detector enabled
+  - golint ./...
+  - go test -v -cover github.com/proway2/kvserver/kvstorage github.com/proway2/kvserver/vacuum github.com/proway2/kvserver/router
