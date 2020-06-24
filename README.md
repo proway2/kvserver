@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/proway2/kvserver.svg?branch=master)](https://travis-ci.org/proway2/kvserver)
+![Build&Test](https://github.com/proway2/kvserver/workflows/Build&Test/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/proway2/kvserver)](https://goreportcard.com/report/github.com/proway2/kvserver)
 
 # kvserver
