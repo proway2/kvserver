@@ -37,8 +37,8 @@ func main() {
 	addr, port, ttl := getCLIargs()
 
 	// инициализация хранилища
-	storage := &kvstorage.KVStorage{}
-	if initRes := storage.Init(); !initRes {
+	storage := kvstorage.NewStorage()
+	if storage == nil {
 		log.Fatal("Cannot initialize storage!")
 	}
 

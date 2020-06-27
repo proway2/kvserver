@@ -107,10 +107,9 @@ func (resp *myResponseWriter) getCode() int {
 }
 
 func Test_closure(t *testing.T) {
-	storage := kvstorage.KVStorage{}
-	storage.Init()
+	storage := kvstorage.NewStorage()
 
-	handler := GetURLrouter(&storage)
+	handler := GetURLrouter(storage)
 	var writer *myResponseWriter
 	writer = &myResponseWriter{code: 200}
 
