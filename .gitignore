@@ -13,3 +13,6 @@
 
 # Python files
 *.py
+
+kvserver
+.vscode

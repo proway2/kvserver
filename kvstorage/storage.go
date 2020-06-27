@@ -12,20 +12,19 @@ import (
 // KVStorage - Структура с методами, описывающая хранилище
 type KVStorage struct {
 	kvstorage   map[string]*element.Element
-	mux         sync.Mutex
-	queue       list.List // LIFO - the oldest element is always at the front!!!
+	mux         *sync.Mutex
+	queue       *list.List // LIFO - the oldest element is always at the front!!!
 	initialized bool
 }
 
-// Init - Функция инициализации хранилища
-func (kv *KVStorage) Init() bool {
-	if kv.initialized {
-		return false
+// NewStorage returns an initialized key-value storage
+func NewStorage() *KVStorage {
+	return &KVStorage{
+		kvstorage:   make(map[string]*element.Element),
+		mux:         &sync.Mutex{},
+		initialized: true,
+		queue:       list.New(),
 	}
-	kv.kvstorage = make(map[string]*element.Element)
-	kv.initialized = true
-	kv.queue.Init()
-	return true
 }
 
 // Set - установка ключ-значение
@@ -88,7 +87,7 @@ func (kv *KVStorage) OldestElementTime() (time.Time, error) {
 		return elem.Timestamp, nil
 	}
 	// WTF? Element is in queue, but not in the map?!
-	return time.Time{}, errors.New("shit happens")
+	panic("element is in the queue, but not in the map")
 }
 
 // Delete - delete element from storage by its key
