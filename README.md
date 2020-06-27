@@ -56,7 +56,7 @@ _Error code_: ```404```
 When error is occured code ```400``` is returned by server.
 
 # Tests
-Run ```go test -v -cover ./...```.
+Run ```go test -v -cover -count=1 ./...```.
 
 # License
 GPL v3
