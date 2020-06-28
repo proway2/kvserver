@@ -27,10 +27,10 @@ func NewStorage() *KVStorage {
 	}
 }
 
-// Set - установка ключ-значение
-func (kv *KVStorage) Set(key, value string) bool {
+// Set adds new or updates existing element into the storage
+func (kv *KVStorage) Set(key, value string) error {
 	if !kv.initialized || len(key) == 0 {
-		return false
+		return errors.New("set: Storage is not initialized or key is empty")
 	}
 	kv.mux.Lock()
 	defer kv.mux.Unlock()
@@ -50,7 +50,7 @@ func (kv *KVStorage) Set(key, value string) bool {
 	}
 	kv.kvstorage[key] = elem
 
-	return true
+	return nil
 }
 
 // Get - получение значения по ключу,

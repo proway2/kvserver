@@ -46,49 +46,49 @@ func TestKVStorage_Set(t *testing.T) {
 		value string
 	}
 	tests := []struct {
-		name   string
-		fields *KVStorage
-		args   args
-		want   bool
+		name    string
+		fields  *KVStorage
+		args    args
+		wantErr bool
 	}{
 		{
-			name:   "Storage is not initialized",
-			fields: &KVStorage{initialized: false},
-			args:   args{key: "test_key", value: "test_value"},
-			want:   false,
+			name:    "Storage is not initialized",
+			fields:  &KVStorage{initialized: false},
+			args:    args{key: KEYNAME, value: KEYVALUE},
+			wantErr: true,
 		},
 		{
-			name:   "Empty key",
-			fields: storage,
-			args:   args{key: "", value: KEYVALUE},
-			want:   false,
+			name:    "Empty key",
+			fields:  storage,
+			args:    args{key: "", value: KEYVALUE},
+			wantErr: true,
 		},
 		{
-			name:   "Good key, empty value",
-			fields: storage,
-			args:   args{key: KEYNAME, value: ""},
-			want:   true,
+			name:    "Good key, empty value",
+			fields:  storage,
+			args:    args{key: KEYNAME, value: ""},
+			wantErr: false,
 		},
 		{
 			// this key-value pair will be in use by next testcase "Key already in storage (update key-value pair)"
-			name:   "Good key, good value",
-			fields: storage,
-			args:   args{key: "key2", value: "value for key2"},
-			want:   true,
+			name:    "Good key, good value",
+			fields:  storage,
+			args:    args{key: "key2", value: "value for key2"},
+			wantErr: false,
 		},
 		{
 			// this testcase relies on the result of the previous testcase "Good key, good value"
-			name:   "Key already in storage (update key-value pair)",
-			fields: storage,
-			args:   args{key: "key2", value: "new value for key2"},
-			want:   true,
+			name:    "Key already in storage (update key-value pair)",
+			fields:  storage,
+			args:    args{key: "key2", value: "new value for key2"},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kv := &tt.fields
-			if got := (*kv).Set(tt.args.key, tt.args.value); got != tt.want {
-				t.Errorf("KVStorage.Set() = %v, want %v", got, tt.want)
+			if err := (*kv).Set(tt.args.key, tt.args.value); (err != nil) != tt.wantErr {
+				t.Errorf("KVStorage.Set() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
