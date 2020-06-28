@@ -33,6 +33,9 @@ jobs:
     - name: Lint
       run: golint ./...
 
+    - name: Vet
+      run: go vet ./...
+
     - name: Build
       run: go build -v .
 
