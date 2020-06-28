@@ -96,8 +96,11 @@ func TestKVStorage_Set(t *testing.T) {
 
 func TestKVStorage_Get(t *testing.T) {
 	// because we need to test the case when key-value pair already in the storage - one storage will be in use by all testcases.
-	storage := NewStorage()
-	storage.Set(KEYNAME, KEYVALUE)
+	goodStorage := NewStorage()
+	goodStorage.Set(KEYNAME, KEYVALUE)
+	// empty value for the key
+	keyForEmptyValue := "empty key"
+	goodStorage.Set(keyForEmptyValue, "")
 
 	// this storage is not initialized
 	badStorage := NewStorage()
@@ -107,50 +110,58 @@ func TestKVStorage_Get(t *testing.T) {
 		key string
 	}
 	tests := []struct {
-		name   string
-		fields *KVStorage
-		args   args
-		want   string
-		want1  bool
+		name    string
+		fields  *KVStorage
+		args    args
+		want    []byte
+		wantErr bool
 	}{
 		{
-			name:   "Storage is not initialized",
-			fields: badStorage,
-			args:   args{"key1"},
-			want:   "",
-			want1:  false,
+			name:    "Storage is not initialized",
+			fields:  badStorage,
+			args:    args{KEYNAME},
+			want:    nil,
+			wantErr: true,
 		},
 		{
-			name:   "Empty key",
-			fields: storage,
-			args:   args{""},
-			want:   "",
-			want1:  false,
+			name:    "Empty key",
+			fields:  goodStorage,
+			args:    args{""},
+			want:    nil,
+			wantErr: true,
 		},
 		{
-			name:   "Key is in storage",
-			fields: storage,
-			args:   args{KEYNAME},
-			want:   KEYVALUE,
-			want1:  true,
+			name:    "Key is in the storage, value is not empty",
+			fields:  goodStorage,
+			args:    args{KEYNAME},
+			want:    []byte(KEYVALUE),
+			wantErr: false,
 		},
 		{
-			name:   "Key is not in storage",
-			fields: storage,
-			args:   args{KEYVALUE + "xxx"},
-			want:   "",
-			want1:  false,
+			name:    "Key is in the storage, value is empty",
+			fields:  goodStorage,
+			args:    args{keyForEmptyValue},
+			want:    []byte{},
+			wantErr: false,
+		},
+		{
+			name:    "Key is not in the storage",
+			fields:  goodStorage,
+			args:    args{KEYVALUE + "xxx"},
+			want:    nil,
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			kv := tt.fields
-			got, got1 := kv.Get(tt.args.key)
-			if got != tt.want {
-				t.Errorf("KVStorage.Get() got = %v, want %v", got, tt.want)
+			kv := &tt.fields
+			got, err := (*kv).Get(tt.args.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("KVStorage.Get() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			if got1 != tt.want1 {
-				t.Errorf("KVStorage.Get() got1 = %v, want %v", got1, tt.want1)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("KVStorage.Get() = %v, want %v", got, tt.want)
 			}
 		})
 	}

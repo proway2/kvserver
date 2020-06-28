@@ -53,19 +53,19 @@ func (kv *KVStorage) Set(key, value string) error {
 	return nil
 }
 
-// Get - получение значения по ключу,
-// второе возвращаемое значение указывает на успешность получения значения по ключу
-func (kv *KVStorage) Get(key string) (string, bool) {
+// Get returns value by it's key
+func (kv *KVStorage) Get(key string) ([]byte, error) {
 	if !kv.initialized || len(key) == 0 {
-		return "", false
+		return nil, errors.New("get: Storage is not initialized or key is empty")
 	}
 	kv.mux.Lock()
 	defer kv.mux.Unlock()
 	elem, ok := kv.kvstorage[key]
 	if ok {
-		return elem.Val, true
+		return []byte(elem.Val), nil
 	}
-	return "", false
+	// element with the key is not found, but this is not an error
+	return nil, nil
 }
 
 // OldestElementTime - получить метку времени старейшего элемента

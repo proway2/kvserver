@@ -19,7 +19,7 @@ func GetURLrouter(stor *kvstorage.KVStorage) func(
 			fmt.Fprint(w, "400 Malformed request.\n")
 			return
 		}
-		reqHandler, isHandlerExists := creator(r.Method)
+		reqHandler, isHandlerExists := requestFactory(r.Method)
 		if !isHandlerExists {
 			w.WriteHeader(400) // Bad request
 			fmt.Fprint(w, "400 Malformed request.\n")
@@ -38,8 +38,8 @@ func getKeyFromURL(inps string) (string, bool) {
 	return inps[5:], true
 }
 
-// Фабричная функция
-func creator(method string) (func(*kvstorage.KVStorage, string, *http.Request) (string, int), bool) {
+// requestFactory returns function which can be use to handle different types of HTTP request (GET or POST)
+func requestFactory(method string) (func(*kvstorage.KVStorage, string, *http.Request) (string, int), bool) {
 	if method == "GET" {
 		return methodGET, true
 	}
@@ -49,17 +49,20 @@ func creator(method string) (func(*kvstorage.KVStorage, string, *http.Request) (
 	return nil, false
 }
 
-// methodGET - функция обработчика метода GET
+// methodGET returns value and the HTTP code for the key.
 func methodGET(stor *kvstorage.KVStorage, key string, r *http.Request) (string, int) {
 	code := 200
-	// Получаем значение по ключу
-	val, res := stor.Get(key)
-	if !res {
-		// значение ключа не найдено - ошибка 404
-		val = "404 There is no record in storage for this key.\n"
+	// get the value by its key
+	val, err := stor.Get(key)
+	if err != nil {
+		return "500 Internal storage error.\n", 500
+	}
+	if val == nil {
+		// either error occured or key is not found in the storage (code 404)
+		val = []byte(fmt.Sprintf("404 There is no record in the storage for key '%v'.\n", key))
 		code = 404
 	}
-	return val, code
+	return string(val), code
 }
 
 // methodPOST - функция обработчика метода POST
@@ -73,7 +76,7 @@ func methodPOST(stor *kvstorage.KVStorage, key string, r *http.Request) (string,
 		if !stor.Delete(key) {
 			// значение не удалено
 			code = 404
-			val = "404 There is no record in storage for this key.\n"
+			val = fmt.Sprintf("404 There is no record in the storage for key '%v'.\n", key)
 		}
 	} else {
 		if value, ok := r.Form["value"]; ok {
