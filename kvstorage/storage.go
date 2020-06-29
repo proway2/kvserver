@@ -42,7 +42,7 @@ func (kv *KVStorage) Set(key, value string) error {
 		// вместо него будет новый с таким же ключом
 		kv.queue.Remove(elem.QueueElement)
 	}
-	// in order to maintain LIFO new elements push back
+	// in order to maintain LIFO new elements pushed back
 	elem := &element.Element{
 		Val:          value,
 		Timestamp:    time.Now(),
@@ -71,14 +71,14 @@ func (kv *KVStorage) Get(key string) ([]byte, error) {
 // OldestElementTime - получить метку времени старейшего элемента
 func (kv *KVStorage) OldestElementTime() (time.Time, error) {
 	if !kv.initialized {
-		return time.Time{}, errors.New("storage is not initialized")
+		return time.Time{}, errors.New("oldestelementtime: Storage is not initialized or key is empty")
 	}
 	kv.mux.Lock()
 	defer kv.mux.Unlock()
 
 	oldestElemInQueue := kv.queue.Front()
 	if oldestElemInQueue == nil {
-		return time.Time{}, errors.New("not found in storage")
+		return time.Time{}, errors.New("oldestelementtime: Element is not found in storage")
 	}
 
 	key := oldestElemInQueue.Value.(string)
@@ -90,10 +90,10 @@ func (kv *KVStorage) OldestElementTime() (time.Time, error) {
 	panic("element is in the queue, but not in the map")
 }
 
-// Delete - delete element from storage by its key
-func (kv *KVStorage) Delete(key string) bool {
+// Delete removes element from storage by its key
+func (kv *KVStorage) Delete(key string) (bool, error) {
 	if !kv.initialized || len(key) == 0 {
-		return false
+		return false, errors.New("delete: Storage is not initialized or key is empty")
 	}
 	kv.mux.Lock()
 	defer kv.mux.Unlock()
@@ -101,7 +101,7 @@ func (kv *KVStorage) Delete(key string) bool {
 	if ok {
 		kv.purgeElement(key)
 	}
-	return ok
+	return ok, nil
 }
 
 // DeleteFrontIfOlder - removes front element if its older than ctxTime

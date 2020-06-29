@@ -220,8 +220,8 @@ func TestKVStorage_OldestElementTime(t *testing.T) {
 
 func TestKVStorage_Delete(t *testing.T) {
 	// because we need to test the case when key-value pair already in the storage - one storage will be in use by all testcases.
-	storage := NewStorage()
-	storage.Set(KEYNAME, KEYVALUE)
+	goodStorage := NewStorage()
+	goodStorage.Set(KEYNAME, KEYVALUE)
 
 	// empty storage
 	emptyStorage := NewStorage()
@@ -230,60 +230,65 @@ func TestKVStorage_Delete(t *testing.T) {
 	badStorage := NewStorage()
 	badStorage.initialized = false
 
-	type args struct {
-		key string
-	}
 	tests := []struct {
-		name   string
-		fields *KVStorage
-		args   args
-		want   bool
-		want2  int // number of elements in the storage
+		name    string
+		fields  *KVStorage
+		key     string
+		want    bool
+		wantErr bool
+		wantLen int // number of elements in the storage
 	}{
 		{
-			name:   "Storage is not initialized",
-			fields: badStorage,
-			args:   args{KEYNAME},
-			want:   false,
-			want2:  0,
+			name:    "Storage is not initialized",
+			fields:  badStorage,
+			key:     KEYNAME,
+			want:    false,
+			wantErr: true,
+			wantLen: 0,
 		},
 		{
-			name:   "Empty key, normal storage",
-			fields: storage,
-			args:   args{""},
-			want:   false,
-			want2:  1,
+			name:    "Empty key, normal storage",
+			fields:  goodStorage,
+			key:     "",
+			want:    false,
+			wantErr: true,
+			wantLen: 0,
 		},
 		{
-			name:   "Good key, empty storage",
-			fields: emptyStorage,
-			args:   args{KEYNAME},
-			want:   false,
-			want2:  0,
+			name:    "Good key, empty storage",
+			fields:  emptyStorage,
+			key:     KEYNAME,
+			want:    false,
+			wantErr: false,
+			wantLen: 0,
 		},
 		{
-			name:   "Key is not found in storage (storage is not empty)",
-			fields: storage,
-			args:   args{KEYNAME + "xxx"},
-			want:   false,
-			want2:  1,
+			name:    "Key is not found in storage (storage is not empty)",
+			fields:  goodStorage,
+			key:     KEYNAME + "xxx",
+			want:    false,
+			wantErr: false,
+			wantLen: 1,
 		},
 		{
-			name:   "Key is found in storage",
-			fields: storage,
-			args:   args{KEYNAME},
-			want:   true,
-			want2:  0,
+			name:    "Key is found in storage",
+			fields:  goodStorage,
+			key:     KEYNAME,
+			want:    true,
+			wantErr: false,
+			wantLen: 0,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kv := tt.fields
-			if got := kv.Delete(tt.args.key); got != tt.want {
-				t.Errorf("KVStorage.Delete() = %v, want %v", got, tt.want)
+			got, err := kv.Delete(tt.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("KVStorage.Delete() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			if len := kv.queue.Len(); len != tt.want2 {
-				t.Errorf("Queue length  = %v, want %v", len, tt.want2)
+			if len := kv.queue.Len(); got != tt.want && len != tt.wantLen {
+				t.Errorf("KVStorage.Delete() = %v, want %v", got, tt.want)
 			}
 		})
 	}
