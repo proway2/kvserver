@@ -10,6 +10,14 @@ import (
 	"github.com/proway2/kvserver/kvstorage"
 )
 
+const (
+	correctValueName   = "value"
+	incorrectValueName = "valu"
+	correctKey         = "key1"
+	emptyKey           = ""
+	correctValue       = "key1 test value"
+)
+
 func TestGetURLrouter(t *testing.T) {
 	type args struct {
 		stor *kvstorage.KVStorage
@@ -22,7 +30,7 @@ func TestGetURLrouter(t *testing.T) {
 		{
 			name: "Создание обработчика URL",
 			args: args{
-				stor: &kvstorage.KVStorage{},
+				stor: kvstorage.NewStorage(),
 			},
 			want: func(w http.ResponseWriter, r *http.Request) {},
 		},
@@ -114,15 +122,15 @@ func Test_closure(t *testing.T) {
 	writer = &myResponseWriter{code: 200}
 
 	form := url.Values{}
-	form.Add("value", "key111 test")
-	reqSet, _ := http.NewRequest("POST", "http://localhost:8080/key/key111", strings.NewReader(form.Encode()))
-	reqSet.Header.Add("value", "key111 test")
+	form.Add(correctValueName, correctValue)
+	reqSet, _ := http.NewRequest("POST", "http://localhost:8080/key/"+correctKey, strings.NewReader(form.Encode()))
+	reqSet.Header.Add(correctValueName, correctValue)
 	reqSet.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	form = url.Values{}
-	form.Add("valu", "key111 test")
-	reqBad, _ := http.NewRequest("POST", "http://localhost:8080/key/key111", strings.NewReader(form.Encode()))
-	reqBad.Header.Add("valu", "key111 test")
+	form.Add(incorrectValueName, correctValue)
+	reqBad, _ := http.NewRequest("POST", "http://localhost:8080/key/"+correctKey, strings.NewReader(form.Encode()))
+	reqBad.Header.Add(incorrectValueName, correctValue)
 	reqBad.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	type args struct {
@@ -136,7 +144,7 @@ func Test_closure(t *testing.T) {
 		text string
 	}{
 		{
-			name: "Неправильный HTTP метод",
+			name: "Incorrect HTTP method (verb)",
 			args: args{
 				w: writer,
 				r: &http.Request{
@@ -144,14 +152,14 @@ func Test_closure(t *testing.T) {
 					URL: &url.URL{
 						Scheme: "http",
 						Host:   "localhost:8080",
-						Path:   "/key/key111",
+						Path:   "/key/" + correctKey,
 					},
 				},
 			},
 			want: 400,
 		},
 		{
-			name: "Получение из пустого хранилища",
+			name: "Getting value from the empty storage",
 			args: args{
 				w: writer,
 				r: &http.Request{
@@ -159,14 +167,14 @@ func Test_closure(t *testing.T) {
 					URL: &url.URL{
 						Scheme: "http",
 						Host:   "localhost:8080",
-						Path:   "/key/key111",
+						Path:   "/key/" + correctKey,
 					},
 				},
 			},
 			want: 404,
 		},
 		{
-			name: "Удаление из пустого хранилища",
+			name: "Deleting from the empty storage",
 			args: args{
 				w: writer,
 				r: &http.Request{
@@ -174,14 +182,14 @@ func Test_closure(t *testing.T) {
 					URL: &url.URL{
 						Scheme: "http",
 						Host:   "localhost:8080",
-						Path:   "/key/key111",
+						Path:   "/key/" + correctKey,
 					},
 				},
 			},
 			want: 404,
 		},
 		{
-			name: "Пустое значение ключа",
+			name: "Setting value with empty key",
 			args: args{
 				w: writer,
 				r: &http.Request{
@@ -189,14 +197,14 @@ func Test_closure(t *testing.T) {
 					URL: &url.URL{
 						Scheme: "http",
 						Host:   "localhost:8080",
-						Path:   "/key/",
+						Path:   "/key/" + emptyKey,
 					},
 				},
 			},
 			want: 400,
 		},
 		{
-			name: "Короткое значение ключа",
+			name: "URL keyword is incorrect",
 			args: args{
 				w: writer,
 				r: &http.Request{
@@ -211,7 +219,7 @@ func Test_closure(t *testing.T) {
 			want: 400,
 		},
 		{
-			name: "Установка значения",
+			name: "Correct setting the value by its key",
 			args: args{
 				w: writer,
 				r: reqSet,
@@ -219,7 +227,7 @@ func Test_closure(t *testing.T) {
 			want: 200,
 		},
 		{
-			name: "Удаление существующего значения",
+			name: "Deleting existing value by its key",
 			args: args{
 				w: writer,
 				r: &http.Request{
@@ -227,14 +235,14 @@ func Test_closure(t *testing.T) {
 					URL: &url.URL{
 						Scheme: "http",
 						Host:   "localhost:8080",
-						Path:   "/key/key111",
+						Path:   "/key/" + correctKey,
 					},
 				},
 			},
 			want: 200,
 		},
 		{
-			name: "Некорректный URL для установки значения",
+			name: "Incorrect URL",
 			args: args{
 				w: writer,
 				r: reqBad,

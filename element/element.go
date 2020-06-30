@@ -7,7 +7,7 @@ import (
 
 // Element - структура описывающая один элемент хранилища
 type Element struct {
-	Val          string
-	Timestamp    time.Time
-	QueueElement *list.Element
+	Val          string        // the actual value of the element
+	Timestamp    time.Time     // time when element is created or updated
+	QueueElement *list.Element // pointer to the position in the queue (LIFO stack)
 }
