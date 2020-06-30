@@ -308,39 +308,53 @@ func TestKVStorage_DeleteFrontIfOlder(t *testing.T) {
 		ctxTime time.Time
 	}
 	tests := []struct {
-		name   string
-		fields *KVStorage
-		args   args
-		want   bool
+		name    string
+		fields  *KVStorage
+		args    args
+		want    bool
+		wantErr bool
+		wantLen int
 	}{
-		// TODO: Add test cases.
 		{
-			name:   "Storage is not initialized",
-			fields: badStorage,
-			want:   false,
+			name:    "Storage is not initialized",
+			fields:  badStorage,
+			want:    false,
+			wantErr: true,
+			wantLen: 0,
 		},
 		{
-			name:   "Empty storage",
-			fields: emptyStorage,
-			want:   false,
+			name:    "Empty storage",
+			fields:  emptyStorage,
+			want:    false,
+			wantErr: false,
+			wantLen: 0,
 		},
 		{
-			name:   "Element younger than NOW-60 secs",
-			fields: goodStorage,
-			args:   args{time.Now().Add(-60 * time.Second)},
-			want:   false,
+			name:    "Element younger than NOW-60 secs (no delete)",
+			fields:  goodStorage,
+			args:    args{time.Now().Add(-60 * time.Second)},
+			want:    false,
+			wantErr: false,
+			wantLen: 1,
 		},
 		{
-			name:   "Element older than NOW",
-			fields: goodStorage,
-			args:   args{time.Now()},
-			want:   true,
+			name:    "Element older than NOW (delete)",
+			fields:  goodStorage,
+			args:    args{time.Now()},
+			want:    true,
+			wantErr: false,
+			wantLen: 0,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			kv := tt.fields
-			if got := kv.DeleteFrontIfOlder(tt.args.ctxTime); got != tt.want {
+			got, err := kv.DeleteFrontIfOlder(tt.args.ctxTime)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("KVStorage.DeleteFrontIfOlder() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if len := kv.queue.Len(); got != tt.want && len != tt.wantLen {
 				t.Errorf("KVStorage.DeleteFrontIfOlder() = %v, want %v", got, tt.want)
 			}
 		})

@@ -71,7 +71,7 @@ func (kv *KVStorage) Get(key string) ([]byte, error) {
 // OldestElementTime - получить метку времени старейшего элемента
 func (kv *KVStorage) OldestElementTime() (time.Time, error) {
 	if !kv.initialized {
-		return time.Time{}, errors.New("oldestelementtime: Storage is not initialized or key is empty")
+		return time.Time{}, errors.New("oldestelementtime: Storage is not initialized")
 	}
 	kv.mux.Lock()
 	defer kv.mux.Unlock()
@@ -105,9 +105,9 @@ func (kv *KVStorage) Delete(key string) (bool, error) {
 }
 
 // DeleteFrontIfOlder - removes front element if its older than ctxTime
-func (kv *KVStorage) DeleteFrontIfOlder(ctxTime time.Time) bool {
+func (kv *KVStorage) DeleteFrontIfOlder(ctxTime time.Time) (bool, error) {
 	if !kv.initialized {
-		return false
+		return false, errors.New("deletefrontifolder: Storage is not initialized")
 	}
 	kv.mux.Lock()
 	defer kv.mux.Unlock()
@@ -115,7 +115,7 @@ func (kv *KVStorage) DeleteFrontIfOlder(ctxTime time.Time) bool {
 	// first need to check if there is something in the queue
 	oldestElemInQueue := kv.queue.Front()
 	if oldestElemInQueue == nil {
-		return false
+		return false, nil
 	}
 
 	// map key is needed to test the element against input time
@@ -125,9 +125,10 @@ func (kv *KVStorage) DeleteFrontIfOlder(ctxTime time.Time) bool {
 	elem, _ := kv.kvstorage[key]
 	if elem.Timestamp.Before(ctxTime) {
 		kv.purgeElement(key)
-		return true
+		return true, nil
 	}
-	return false
+	// the element is not in the storage right now
+	return false, nil
 }
 
 func (kv *KVStorage) purgeElement(key string) {
