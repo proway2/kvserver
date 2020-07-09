@@ -93,8 +93,8 @@ func methodPOST(stor readerWriter, key string, r *http.Request) (string, int) {
 	r.ParseForm()
 	value := r.FormValue(valueFormFieldName)
 	postProcessingMethod := postMethodFactory(len(r.Form))
-	code := postProcessingMethod(stor, key, value)
-	return httpStatusCodeMessages[code], code
+	httpCode := postProcessingMethod(stor, key, value)
+	return httpStatusCodeMessages[httpCode], httpCode
 }
 
 func postMethodFactory(formLen int) func(storage readerWriter, key, value string) int {
