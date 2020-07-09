@@ -1,30 +1,35 @@
 package vacuum
 
 import (
+	"errors"
 	"log"
 	"time"
-
-	"github.com/proway2/kvserver/kvstorage"
 )
+
+type writer interface {
+	OldestElementTime() (time.Time, error)
+	DeleteFrontIfOlder(time.Time) (bool, error)
+}
 
 // Vacuum - struct for cleaner
 type Vacuum struct {
-	storage     *kvstorage.KVStorage
+	storage     writer
 	ttl         uint64
 	ttlDelim    uint
 	initialized bool
 }
 
-// Init - функция инициализации структуры Lifo
-func (q *Vacuum) Init(stor *kvstorage.KVStorage, ttl uint64) bool {
-	if stor == nil || q.initialized || ttl == 0 {
-		return false
+// NewCleaner returns an initialized cleaner for storage 'w' with TTL of 'ttl'
+func NewCleaner(w writer, ttl uint64) (*Vacuum, error) {
+	if w == nil || ttl == 0 {
+		return &Vacuum{}, errors.New("newCleaner: no storage provided or TTL = 0")
 	}
-	q.storage = stor
-	q.ttl = ttl
-	q.ttlDelim = 2 // hard coded time delimiter !
-	q.initialized = true
-	return true
+	return &Vacuum{
+		storage:     w,
+		ttl:         ttl,
+		ttlDelim:    2,
+		initialized: true,
+	}, nil
 }
 
 // Run - infinite storage cleaner
@@ -35,7 +40,12 @@ func (q *Vacuum) Run() {
 	// we need to hit the oldest element periodically
 	for {
 		elementTime, err := q.storage.OldestElementTime()
-		sleepPeriod := getSleepPeriod(elementTime, err, q.ttl, q.ttlDelim)
+		var sleepPeriod time.Duration
+		if err != nil {
+			sleepPeriod = getSleepPeriodEmptyQueue(q.ttl, q.ttlDelim)
+		} else {
+			sleepPeriod = getSleepPeriod(elementTime, nil, q.ttl, q.ttlDelim)
+		}
 		select {
 		case <-time.After(sleepPeriod):
 			testTime := time.Now().Add(
@@ -46,12 +56,13 @@ func (q *Vacuum) Run() {
 	}
 }
 
+func getSleepPeriodEmptyQueue(ttl uint64, ttlDelim uint) time.Duration {
+	return time.Duration(
+		float64(ttl) * float64(time.Second) / float64(ttlDelim),
+	)
+}
+
 func getSleepPeriod(elementTime time.Time, err error, ttl uint64, ttlDelim uint) time.Duration {
-	if err != nil {
-		return time.Duration(
-			float64(ttl) * float64(time.Second) / float64(ttlDelim),
-		)
-	}
 	// need to handle special case scenario when
 	// either no ttl or ttlDelim provided or these are wrong
 	if ttl < 1 || ttlDelim < 2 {

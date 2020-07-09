@@ -3,9 +3,21 @@ package router
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/proway2/kvserver/kvstorage"
 )
+
+type writer interface {
+	Set(key, value string) error
+	Delete(key string) (bool, error)
+}
+
+type reader interface {
+	Get(key string) ([]byte, error)
+}
+
+type readerWriter interface {
+	reader
+	writer
+}
 
 // POST form field name (contains data for storing the key)
 const valueFormFieldName = "value"
@@ -18,7 +30,7 @@ var httpStatusCodeMessages = map[int]string{
 }
 
 // GetURLrouter - возвращает функцию маршрутизатор HTTP запросов в зависимости от типа.
-func GetURLrouter(stor *kvstorage.KVStorage) func(
+func GetURLrouter(stor readerWriter) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	// замыкание необходимо для оборачивания локальных переменных в обработчик URL
@@ -49,7 +61,7 @@ func getKeyFromURL(inps string) (string, bool) {
 }
 
 // requestFactory returns function which can be use to handle different types of HTTP request (GET or POST)
-func requestFactory(method string) (func(*kvstorage.KVStorage, string, *http.Request) (string, int), bool) {
+func requestFactory(method string) (func(readerWriter, string, *http.Request) (string, int), bool) {
 	if method == http.MethodGet {
 		return methodGET, true
 	}
@@ -60,7 +72,7 @@ func requestFactory(method string) (func(*kvstorage.KVStorage, string, *http.Req
 }
 
 // methodGET returns value and the HTTP code for the key.
-func methodGET(stor *kvstorage.KVStorage, key string, r *http.Request) (string, int) {
+func methodGET(stor readerWriter, key string, r *http.Request) (string, int) {
 	code := 200
 	// get the value by its key
 	val, err := stor.Get(key)
@@ -76,16 +88,16 @@ func methodGET(stor *kvstorage.KVStorage, key string, r *http.Request) (string, 
 }
 
 // methodPOST - функция обработчика метода POST
-func methodPOST(stor *kvstorage.KVStorage, key string, r *http.Request) (string, int) {
+func methodPOST(stor readerWriter, key string, r *http.Request) (string, int) {
 	// требуется для извлечения значений метода POST - заполняется r.Form
 	r.ParseForm()
 	value := r.FormValue(valueFormFieldName)
 	postProcessingMethod := postMethodFactory(len(r.Form))
-	code := postProcessingMethod(stor, key, value)
-	return httpStatusCodeMessages[code], code
+	httpCode := postProcessingMethod(stor, key, value)
+	return httpStatusCodeMessages[httpCode], httpCode
 }
 
-func postMethodFactory(formLen int) func(storage *kvstorage.KVStorage, key, value string) int {
+func postMethodFactory(formLen int) func(storage readerWriter, key, value string) int {
 	if formLen == 0 {
 		// deleting the element
 		return deleteElementRequest
@@ -95,7 +107,7 @@ func postMethodFactory(formLen int) func(storage *kvstorage.KVStorage, key, valu
 }
 
 // deleteElementRequest processes delete HTTP request and returns HTTP code.
-func deleteElementRequest(storage *kvstorage.KVStorage, key, value string) int {
+func deleteElementRequest(storage readerWriter, key, value string) int {
 	// deleting element by its key
 	delStatus, err := storage.Delete(key)
 	if err != nil {
@@ -110,7 +122,7 @@ func deleteElementRequest(storage *kvstorage.KVStorage, key, value string) int {
 	return 404
 }
 
-func setElementRequest(storage *kvstorage.KVStorage, key, value string) int {
+func setElementRequest(storage readerWriter, key, value string) int {
 	// setting (updating) the value by its key
 	err := storage.Set(key, value)
 	if err != nil {
