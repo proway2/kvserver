@@ -42,9 +42,9 @@ func main() {
 		log.Fatal("Cannot initialize storage!")
 	}
 
-	// инициализация очистки
-	cleaner := vacuum.Vacuum{}
-	if initRes := cleaner.Init(storage, ttl); !initRes {
+	// cleaner must be initialized before use
+	cleaner, err := vacuum.NewCleaner(storage, ttl)
+	if err != nil {
 		log.Fatal("Cannot initialize cleaner!")
 	}
 	// для очистки хранилища от старых элементов используем отдельный поток

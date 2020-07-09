@@ -1,30 +1,35 @@
 package vacuum
 
 import (
+	"errors"
 	"log"
 	"time"
-
-	"github.com/proway2/kvserver/kvstorage"
 )
+
+type writer interface {
+	OldestElementTime() (time.Time, error)
+	DeleteFrontIfOlder(time.Time) (bool, error)
+}
 
 // Vacuum - struct for cleaner
 type Vacuum struct {
-	storage     *kvstorage.KVStorage
+	storage     writer
 	ttl         uint64
 	ttlDelim    uint
 	initialized bool
 }
 
-// Init - функция инициализации структуры Lifo
-func (q *Vacuum) Init(stor *kvstorage.KVStorage, ttl uint64) bool {
-	if stor == nil || q.initialized || ttl == 0 {
-		return false
+// NewCleaner returns an initialized cleaner for storage 'w' with TTL of 'ttl'
+func NewCleaner(w writer, ttl uint64) (*Vacuum, error) {
+	if w == nil || ttl == 0 {
+		return &Vacuum{}, errors.New("newCleaner: no storage provided or TTL = 0")
 	}
-	q.storage = stor
-	q.ttl = ttl
-	q.ttlDelim = 2 // hard coded time delimiter !
-	q.initialized = true
-	return true
+	return &Vacuum{
+		storage:     w,
+		ttl:         ttl,
+		ttlDelim:    2,
+		initialized: true,
+	}, nil
 }
 
 // Run - infinite storage cleaner
