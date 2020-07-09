@@ -1,7 +1,6 @@
 package vacuum
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -52,15 +51,6 @@ func Test_getSleepPeriod(t *testing.T) {
 		want time.Duration
 	}{
 		// Test cases.
-		{
-			name: "No elements in queue",
-			args: args{
-				err:      errors.New("Testing: No elements in queue"),
-				ttl:      60,
-				ttlDelim: 2,
-			},
-			want: time.Duration(30 * time.Second),
-		},
 		{
 			name: "No TTL provided",
 			args: args{
@@ -164,6 +154,34 @@ func TestNewCleaner(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewCleaner() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getSleepPeriodEmptyQueue(t *testing.T) {
+	type args struct {
+		ttl      uint64
+		ttlDelim uint
+	}
+	tests := []struct {
+		name string
+		args args
+		want time.Duration
+	}{
+		{
+			name: "Normal operation",
+			args: args{
+				ttl:      60,
+				ttlDelim: 2,
+			},
+			want: time.Duration(30 * time.Second),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getSleepPeriodEmptyQueue(tt.args.ttl, tt.args.ttlDelim); got != tt.want {
+				t.Errorf("getSleepPeriodEmptyQueue() = %v, want %v", got, tt.want)
 			}
 		})
 	}

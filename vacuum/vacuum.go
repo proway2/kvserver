@@ -40,7 +40,12 @@ func (q *Vacuum) Run() {
 	// we need to hit the oldest element periodically
 	for {
 		elementTime, err := q.storage.OldestElementTime()
-		sleepPeriod := getSleepPeriod(elementTime, err, q.ttl, q.ttlDelim)
+		var sleepPeriod time.Duration
+		if err != nil {
+			sleepPeriod = getSleepPeriodEmptyQueue(q.ttl, q.ttlDelim)
+		} else {
+			sleepPeriod = getSleepPeriod(elementTime, nil, q.ttl, q.ttlDelim)
+		}
 		select {
 		case <-time.After(sleepPeriod):
 			testTime := time.Now().Add(
@@ -51,12 +56,13 @@ func (q *Vacuum) Run() {
 	}
 }
 
+func getSleepPeriodEmptyQueue(ttl uint64, ttlDelim uint) time.Duration {
+	return time.Duration(
+		float64(ttl) * float64(time.Second) / float64(ttlDelim),
+	)
+}
+
 func getSleepPeriod(elementTime time.Time, err error, ttl uint64, ttlDelim uint) time.Duration {
-	if err != nil {
-		return time.Duration(
-			float64(ttl) * float64(time.Second) / float64(ttlDelim),
-		)
-	}
 	// need to handle special case scenario when
 	// either no ttl or ttlDelim provided or these are wrong
 	if ttl < 1 || ttlDelim < 2 {
