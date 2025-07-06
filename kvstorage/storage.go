@@ -122,7 +122,7 @@ func (kv *KVStorage) DeleteFrontIfOlder(ctxTime time.Time) (bool, error) {
 	key := oldestElemInQueue.Value.(string)
 	// need to check if it's in storage.
 	// it MUST be in storage at this point
-	elem, _ := kv.kvstorage[key]
+	elem := kv.kvstorage[key]
 	if elem.Timestamp.Before(ctxTime) {
 		kv.purgeElement(key)
 		return true, nil
