@@ -80,7 +80,7 @@ func methodGET(stor readerWriter, key string, r *http.Request) (string, int) {
 		return httpStatusCodeMessages[500], 500
 	}
 	if val == nil {
-		// either error occured or key is not found in the storage (code 404)
+		// either error occurred or key is not found in the storage (code 404)
 		code = 404
 		val = []byte(fmt.Sprintf(httpStatusCodeMessages[code], key))
 	}
