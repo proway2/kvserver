@@ -38,11 +38,12 @@ func (q *Vacuum) Run() {
 		log.Fatalln("Cleaner is not properly initialized.")
 	}
 	// we need to hit the oldest element periodically
+	emptyQueueSleepPeriod := getSleepPeriodEmptyQueue(q.ttl, q.ttlDelim)
 	for {
 		elementTime, err := q.storage.OldestElementTime()
 		var sleepPeriod time.Duration
 		if err != nil {
-			sleepPeriod = getSleepPeriodEmptyQueue(q.ttl, q.ttlDelim)
+			sleepPeriod = emptyQueueSleepPeriod
 		} else {
 			sleepPeriod = getSleepPeriod(elementTime, nil, q.ttl, q.ttlDelim)
 		}
