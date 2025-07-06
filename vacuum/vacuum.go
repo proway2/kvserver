@@ -46,14 +46,13 @@ func (q *Vacuum) Run() {
 		} else {
 			sleepPeriod = getSleepPeriod(elementTime, nil, q.ttl, q.ttlDelim)
 		}
-		select {
-		case <-time.After(sleepPeriod):
-			testTime := time.Now().Add(
-				time.Duration(-q.ttl * uint64(time.Second)),
-			)
-			if _, err := q.storage.DeleteFrontIfOlder(testTime); err != nil {
-				return
-			}
+
+		time.Sleep(sleepPeriod)
+		testTime := time.Now().Add(
+			time.Duration(-q.ttl * uint64(time.Second)),
+		)
+		if _, err := q.storage.DeleteFrontIfOlder(testTime); err != nil {
+			return
 		}
 	}
 }
