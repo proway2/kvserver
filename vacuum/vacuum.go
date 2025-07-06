@@ -51,7 +51,9 @@ func (q *Vacuum) Run() {
 			testTime := time.Now().Add(
 				time.Duration(-q.ttl * uint64(time.Second)),
 			)
-			q.storage.DeleteFrontIfOlder(testTime)
+			if _, err := q.storage.DeleteFrontIfOlder(testTime); err != nil {
+				return
+			}
 		}
 	}
 }
@@ -74,9 +76,7 @@ func getSleepPeriod(elementTime time.Time, err error, ttl uint64, ttlDelim uint)
 		),
 	)
 
-	timeDiffNS := float64(
-		oldestElementFinalTime.Sub(time.Now()).Nanoseconds(),
-	) / float64(ttlDelim)
+	timeDiffNS := float64(time.Until(oldestElementFinalTime).Nanoseconds()) / float64(ttlDelim)
 
 	// to handle already expired elements must check for negative numbers
 	if timeDiffNS < 0.0 {
