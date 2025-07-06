@@ -224,7 +224,8 @@ func TestKVStorage_OldestElementTime(t *testing.T) {
 func TestKVStorage_Delete(t *testing.T) {
 	// because we need to test the case when key-value pair already in the storage - one storage will be in use by all testcases.
 	goodStorage := NewStorage()
-	goodStorage.Set(KEYNAME, KEYVALUE)
+	err := goodStorage.Set(KEYNAME, KEYVALUE)
+	check(err, t)
 
 	// empty storage
 	emptyStorage := NewStorage()
@@ -300,7 +301,8 @@ func TestKVStorage_Delete(t *testing.T) {
 func TestKVStorage_DeleteFrontIfOlder(t *testing.T) {
 	// because we need to test the case when key-value pair already in the storage - one storage will be in use by all testcases.
 	goodStorage := NewStorage()
-	goodStorage.Set(KEYNAME, KEYVALUE)
+	err := goodStorage.Set(KEYNAME, KEYVALUE)
+	check(err, t)
 
 	emptyStorage := NewStorage()
 
