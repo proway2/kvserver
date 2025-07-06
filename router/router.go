@@ -89,9 +89,7 @@ func methodGET(stor readerWriter, key string, r *http.Request) (string, int) {
 
 // methodPOST - функция обработчика метода POST
 func methodPOST(stor readerWriter, key string, r *http.Request) (string, int) {
-	// требуется для извлечения значений метода POST - заполняется r.Form
-	r.ParseForm()
-	value := r.FormValue(valueFormFieldName)
+	value := r.PostFormValue(valueFormFieldName)
 	postProcessingMethod := postMethodFactory(len(r.Form))
 	httpCode := postProcessingMethod(stor, key, value)
 	return httpStatusCodeMessages[httpCode], httpCode
