@@ -29,9 +29,9 @@ const (
 
 var httpStatusCodeMessages = map[int]string{
 	200: "",
-	400: "400 Malformed request.\n",
-	404: "404 There is no record in the storage for key '%v'.\n",
-	500: "500 Internal storage error.\n",
+	400: "Malformed request.\n",
+	404: "There is no record in the storage for key '%v'.\n",
+	500: "Internal storage error.\n",
 }
 
 // GetURLrouter - возвращает функцию маршрутизатор HTTP запросов в зависимости от типа.
