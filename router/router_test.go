@@ -91,6 +91,12 @@ func Test_getKeyFromURL(t *testing.T) {
 			want:  "",
 			want1: false,
 		},
+		{
+			name:  "Incorrect path, more than 2 parts",
+			args:  args{inps: "/key2/abc/def"},
+			want:  "",
+			want1: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
