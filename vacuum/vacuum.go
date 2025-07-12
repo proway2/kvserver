@@ -38,20 +38,22 @@ func (q *Vacuum) Run() {
 		log.Fatalln("Cleaner is not properly initialized.")
 	}
 	// we need to hit the oldest element periodically
+	emptyQueueSleepPeriod := getSleepPeriodEmptyQueue(q.ttl, q.ttlDelim)
 	for {
 		elementTime, err := q.storage.OldestElementTime()
 		var sleepPeriod time.Duration
 		if err != nil {
-			sleepPeriod = getSleepPeriodEmptyQueue(q.ttl, q.ttlDelim)
+			sleepPeriod = emptyQueueSleepPeriod
 		} else {
 			sleepPeriod = getSleepPeriod(elementTime, nil, q.ttl, q.ttlDelim)
 		}
-		select {
-		case <-time.After(sleepPeriod):
-			testTime := time.Now().Add(
-				time.Duration(-q.ttl * uint64(time.Second)),
-			)
-			q.storage.DeleteFrontIfOlder(testTime)
+
+		time.Sleep(sleepPeriod)
+		testTime := time.Now().Add(
+			time.Duration(-q.ttl * uint64(time.Second)),
+		)
+		if _, err := q.storage.DeleteFrontIfOlder(testTime); err != nil {
+			return
 		}
 	}
 }
@@ -74,9 +76,7 @@ func getSleepPeriod(elementTime time.Time, err error, ttl uint64, ttlDelim uint)
 		),
 	)
 
-	timeDiffNS := float64(
-		oldestElementFinalTime.Sub(time.Now()).Nanoseconds(),
-	) / float64(ttlDelim)
+	timeDiffNS := float64(time.Until(oldestElementFinalTime).Nanoseconds()) / float64(ttlDelim)
 
 	// to handle already expired elements must check for negative numbers
 	if timeDiffNS < 0.0 {

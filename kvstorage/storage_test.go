@@ -97,10 +97,12 @@ func TestKVStorage_Set(t *testing.T) {
 func TestKVStorage_Get(t *testing.T) {
 	// because we need to test the case when key-value pair already in the storage - one storage will be in use by all testcases.
 	goodStorage := NewStorage()
-	goodStorage.Set(KEYNAME, KEYVALUE)
+	err := goodStorage.Set(KEYNAME, KEYVALUE)
+	check(err, t)
 	// empty value for the key
 	keyForEmptyValue := "empty key"
-	goodStorage.Set(keyForEmptyValue, "")
+	err = goodStorage.Set(keyForEmptyValue, "")
+	check(err, t)
 
 	// this storage is not initialized
 	badStorage := NewStorage()
@@ -170,7 +172,8 @@ func TestKVStorage_Get(t *testing.T) {
 func TestKVStorage_OldestElementTime(t *testing.T) {
 	// because we need to test the case when key-value pair already in the storage - one storage will be in use by all testcases.
 	goodStorage := NewStorage()
-	goodStorage.Set(KEYNAME, KEYVALUE)
+	err := goodStorage.Set(KEYNAME, KEYVALUE)
+	check(err, t)
 	elementTime := goodStorage.kvstorage[KEYNAME].Timestamp
 
 	emptyStorage := NewStorage()
@@ -221,7 +224,8 @@ func TestKVStorage_OldestElementTime(t *testing.T) {
 func TestKVStorage_Delete(t *testing.T) {
 	// because we need to test the case when key-value pair already in the storage - one storage will be in use by all testcases.
 	goodStorage := NewStorage()
-	goodStorage.Set(KEYNAME, KEYVALUE)
+	err := goodStorage.Set(KEYNAME, KEYVALUE)
+	check(err, t)
 
 	// empty storage
 	emptyStorage := NewStorage()
@@ -297,7 +301,8 @@ func TestKVStorage_Delete(t *testing.T) {
 func TestKVStorage_DeleteFrontIfOlder(t *testing.T) {
 	// because we need to test the case when key-value pair already in the storage - one storage will be in use by all testcases.
 	goodStorage := NewStorage()
-	goodStorage.Set(KEYNAME, KEYVALUE)
+	err := goodStorage.Set(KEYNAME, KEYVALUE)
+	check(err, t)
 
 	emptyStorage := NewStorage()
 
@@ -358,5 +363,11 @@ func TestKVStorage_DeleteFrontIfOlder(t *testing.T) {
 				t.Errorf("KVStorage.DeleteFrontIfOlder() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func check(e error, t *testing.T) {
+	if e != nil {
+		t.Error("Something is wrong with tests")
 	}
 }

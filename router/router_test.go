@@ -37,8 +37,9 @@ func TestGetURLrouter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetURLrouter(tt.args.stor); !reflect.DeepEqual(got, tt.want) {
-				// t.Errorf("GetURLrouter() = %v, want %v", got, tt.want)
+			expectedType := reflect.TypeOf(func(w http.ResponseWriter, r *http.Request) {})
+			if got := GetURLrouter(tt.args.stor); reflect.TypeOf(got) != expectedType {
+				t.Errorf("GetURLrouter() = %T, want %T", got, tt.want)
 			}
 		})
 	}
@@ -55,26 +56,44 @@ func Test_getKeyFromURL(t *testing.T) {
 		want1 bool
 	}{
 		{
-			name:  "Пустая строка",
+			name:  "Empty URL path",
 			args:  args{inps: ""},
 			want:  "",
 			want1: false,
 		},
 		{
-			name:  "Строка менее 6 символов",
+			name:  "Incorrect path",
 			args:  args{inps: "abc"},
 			want:  "",
 			want1: false,
 		},
 		{
-			name:  "Строка стандартная > 6 символов",
+			name:  "Good path",
 			args:  args{inps: "/key/fg"},
 			want:  "fg",
 			want1: true,
 		},
 		{
-			name:  "Строка 5 символов, без ключа",
+			name:  "No key path",
 			args:  args{inps: "/key/"},
+			want:  "",
+			want1: false,
+		},
+		{
+			name:  "Incorrect path, no key",
+			args:  args{inps: "/key2/"},
+			want:  "",
+			want1: false,
+		},
+		{
+			name:  "Incorrect path with a key",
+			args:  args{inps: "/key2/abc"},
+			want:  "",
+			want1: false,
+		},
+		{
+			name:  "Incorrect path, more than 2 parts",
+			args:  args{inps: "/key2/abc/def"},
 			want:  "",
 			want1: false,
 		},
@@ -118,8 +137,7 @@ func Test_closure(t *testing.T) {
 	storage := kvstorage.NewStorage()
 
 	handler := GetURLrouter(storage)
-	var writer *myResponseWriter
-	writer = &myResponseWriter{code: 200}
+	var writer = &myResponseWriter{code: 200}
 
 	form := url.Values{}
 	form.Add(correctValueName, correctValue)

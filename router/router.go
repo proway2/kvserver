@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type writer interface {
@@ -19,8 +20,12 @@ type readerWriter interface {
 	writer
 }
 
-// POST form field name (contains data for storing the key)
-const valueFormFieldName = "value"
+const (
+	// POST form field name (contains data for storing the key)
+	valueFormFieldName = "value"
+	// The first part of the URL's path must be like
+	firstPart = "key"
+)
 
 var httpStatusCodeMessages = map[int]string{
 	200: "",
@@ -53,11 +58,17 @@ func GetURLrouter(stor readerWriter) func(
 	}
 }
 
-func getKeyFromURL(inps string) (string, bool) {
-	if len(inps) < 6 {
+func getKeyFromURL(path string) (string, bool) {
+	path = strings.TrimLeft(path, "/")
+	parts := strings.Split(path, "/")
+	if len(parts) != 2 {
 		return "", false
 	}
-	return inps[5:], true
+	key := parts[len(parts)-1]
+	if len(key) == 0 || parts[0] != firstPart {
+		return "", false
+	}
+	return key, true
 }
 
 // requestFactory returns function which can be use to handle different types of HTTP request (GET or POST)
@@ -80,7 +91,7 @@ func methodGET(stor readerWriter, key string, r *http.Request) (string, int) {
 		return httpStatusCodeMessages[500], 500
 	}
 	if val == nil {
-		// either error occured or key is not found in the storage (code 404)
+		// either error occurred or key is not found in the storage (code 404)
 		code = 404
 		val = []byte(fmt.Sprintf(httpStatusCodeMessages[code], key))
 	}
@@ -89,9 +100,7 @@ func methodGET(stor readerWriter, key string, r *http.Request) (string, int) {
 
 // methodPOST - функция обработчика метода POST
 func methodPOST(stor readerWriter, key string, r *http.Request) (string, int) {
-	// требуется для извлечения значений метода POST - заполняется r.Form
-	r.ParseForm()
-	value := r.FormValue(valueFormFieldName)
+	value := r.PostFormValue(valueFormFieldName)
 	postProcessingMethod := postMethodFactory(len(r.Form))
 	httpCode := postProcessingMethod(stor, key, value)
 	return httpStatusCodeMessages[httpCode], httpCode
