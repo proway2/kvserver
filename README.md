@@ -41,11 +41,28 @@ _Success code_: ```200```
 _Error code_: ```400```, empty key is provided.    
 _Note_: TTL is reset for any subsequent requests for the same key.
 
+```sh
+# setting new/updating existing key
+curl -X POST http://localhost:8080/key/foo -H 'Content-Type: application/x-www-form-urlencoded' -d 'value=bar'
+```
+
 ## Getting value by its key
 _HTTP method_: ```GET```    
 _Request's parameter name_: no parameter is needed.    
 _Success code_: ```200```, response's body contains string value for the key.    
 _Error code_: ```404```, key is not found in the storage.    
+
+```sh
+# getting value for existing key
+curl http://localhost:8080/key/foo
+bar
+```
+
+```sh
+# an attempt to get value for unknown key
+curl http://localhost:8080/key/xyz
+404 There is no record in the storage for key 'xyz'.
+```
 
 ## Deleting value by its key
 _HTTP method_: ```POST```    
@@ -54,6 +71,17 @@ _Success code_: ```200```, value is successfully deleted.
 _Error code_: ```404```, key is not found in the storage.    
 
 When error is occured code ```400``` is returned by server.
+
+```sh
+# deleting existing key
+curl -X POST http://localhost:8080/key/foo
+```
+
+```sh
+# an attempt to delete unknown key
+curl -X POST http://localhost:8080/key/xyz
+404 There is no record in the storage for key '%v'.
+```
 
 # Tests
 Run ```go test -v -cover -count=1 ./...```.
