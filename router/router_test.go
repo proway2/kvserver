@@ -56,26 +56,38 @@ func Test_getKeyFromURL(t *testing.T) {
 		want1 bool
 	}{
 		{
-			name:  "Пустая строка",
+			name:  "Empty URL path",
 			args:  args{inps: ""},
 			want:  "",
 			want1: false,
 		},
 		{
-			name:  "Строка менее 6 символов",
+			name:  "Incorrect path",
 			args:  args{inps: "abc"},
 			want:  "",
 			want1: false,
 		},
 		{
-			name:  "Строка стандартная > 6 символов",
+			name:  "Good path",
 			args:  args{inps: "/key/fg"},
 			want:  "fg",
 			want1: true,
 		},
 		{
-			name:  "Строка 5 символов, без ключа",
+			name:  "No key path",
 			args:  args{inps: "/key/"},
+			want:  "",
+			want1: false,
+		},
+		{
+			name:  "Incorrect path, no key",
+			args:  args{inps: "/key2/"},
+			want:  "",
+			want1: false,
+		},
+		{
+			name:  "Incorrect path with a key",
+			args:  args{inps: "/key2/abc"},
 			want:  "",
 			want1: false,
 		},
