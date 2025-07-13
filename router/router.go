@@ -27,13 +27,6 @@ const (
 	firstPart = "key"
 )
 
-var httpStatusCodeMessages = map[int]string{
-	200: "",
-	400: "Malformed request.",
-	404: "There is no record in the storage for key '%v'.",
-	500: "Internal storage error.",
-}
-
 // GetURLrouter - возвращает функцию маршрутизатор HTTP запросов в зависимости от типа.
 func GetURLrouter(stor readerWriter) func(
 	w http.ResponseWriter, r *http.Request,
@@ -43,13 +36,13 @@ func GetURLrouter(stor readerWriter) func(
 		keyName, ok := getKeyFromURL(r.URL.Path)
 		if !ok {
 			w.WriteHeader(400) // Bad request
-			fmt.Fprint(w, httpStatusCodeMessages[400])
+			fmt.Fprint(w, getMessage(400, ""))
 			return
 		}
 		reqHandler, isHandlerExists := requestFactory(r.Method)
 		if !isHandlerExists {
 			w.WriteHeader(400) // Bad request
-			fmt.Fprint(w, httpStatusCodeMessages[400])
+			fmt.Fprint(w, getMessage(400, ""))
 			return
 		}
 		val, code := reqHandler(stor, keyName, r)
@@ -88,12 +81,12 @@ func methodGET(stor readerWriter, key string, r *http.Request) (string, int) {
 	// get the value by its key
 	val, err := stor.Get(key)
 	if err != nil {
-		return httpStatusCodeMessages[500], 500
+		return getMessage(500, key), 500
 	}
 	if val == nil {
 		// either error occurred or key is not found in the storage (code 404)
 		code = 404
-		val = []byte(fmt.Sprintf(httpStatusCodeMessages[code], key))
+		val = []byte(getMessage(404, key))
 	}
 	return string(val), code
 }
@@ -103,7 +96,7 @@ func methodPOST(stor readerWriter, key string, r *http.Request) (string, int) {
 	value := r.PostFormValue(valueFormFieldName)
 	postProcessingMethod := postMethodFactory(len(r.Form))
 	httpCode := postProcessingMethod(stor, key, value)
-	return httpStatusCodeMessages[httpCode], httpCode
+	return getMessage(httpCode, key), httpCode
 }
 
 func postMethodFactory(formLen int) func(storage readerWriter, key, value string) int {
@@ -142,4 +135,19 @@ func setElementRequest(storage readerWriter, key, value string) int {
 		return 200
 	}
 	return 400
+}
+
+func getMessage(code int, key string) string {
+	switch code {
+	case 200:
+		return ""
+	case 400:
+		return "Malformed request"
+	case 404:
+		return fmt.Sprintf("There is no record in the storage for key '%v'", key)
+	case 500:
+		return "Internal storage error"
+	default:
+		return ""
+	}
 }
