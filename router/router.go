@@ -35,14 +35,14 @@ func GetURLrouter(stor readerWriter) func(
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyName, ok := getKeyFromURL(r.URL.Path)
 		if !ok {
-			w.WriteHeader(400) // Bad request
-			fmt.Fprint(w, getMessage(400, ""))
+			w.WriteHeader(http.StatusBadRequest) // Bad request
+			fmt.Fprint(w, getMessage(http.StatusBadRequest, ""))
 			return
 		}
 		reqHandler, isHandlerExists := requestFactory(r.Method)
 		if !isHandlerExists {
-			w.WriteHeader(400) // Bad request
-			fmt.Fprint(w, getMessage(400, ""))
+			w.WriteHeader(http.StatusBadRequest) // Bad request
+			fmt.Fprint(w, getMessage(http.StatusBadRequest, ""))
 			return
 		}
 		val, code := reqHandler(stor, keyName, r)
@@ -81,12 +81,12 @@ func methodGET(stor readerWriter, key string, r *http.Request) (string, int) {
 	// get the value by its key
 	val, err := stor.Get(key)
 	if err != nil {
-		return getMessage(500, key), 500
+		return getMessage(http.StatusInternalServerError, key), http.StatusInternalServerError
 	}
 	if val == nil {
 		// either error occurred or key is not found in the storage (code 404)
-		code = 404
-		val = []byte(getMessage(404, key))
+		code = http.StatusNotFound
+		val = []byte(getMessage(http.StatusNotFound, key))
 	}
 	return string(val), code
 }
@@ -114,14 +114,14 @@ func deleteElementRequest(storage readerWriter, key, value string) int {
 	delStatus, err := storage.Delete(key)
 	if err != nil {
 		// something went wrong with the storage
-		return 500
+		return http.StatusInternalServerError
 	}
 	if delStatus {
 		// element deleted successfully
-		return 200
+		return http.StatusOK
 	}
 	// element was not found and is not deleted
-	return 404
+	return http.StatusNotFound
 }
 
 func setElementRequest(storage readerWriter, key, value string) int {
@@ -129,23 +129,23 @@ func setElementRequest(storage readerWriter, key, value string) int {
 	err := storage.Set(key, value)
 	if err != nil {
 		// something went wrong with the storage
-		return 500
+		return http.StatusInternalServerError
 	}
 	if value != "" {
-		return 200
+		return http.StatusOK
 	}
-	return 400
+	return http.StatusBadRequest
 }
 
 func getMessage(code int, key string) string {
 	switch code {
-	case 200:
+	case http.StatusOK:
 		return ""
-	case 400:
+	case http.StatusBadRequest:
 		return "Malformed request"
-	case 404:
+	case http.StatusNotFound:
 		return fmt.Sprintf("There is no record in the storage for key '%v'", key)
-	case 500:
+	case http.StatusInternalServerError:
 		return "Internal storage error"
 	default:
 		return ""
