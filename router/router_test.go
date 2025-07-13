@@ -177,7 +177,7 @@ func Test_closure(t *testing.T) {
 				},
 			},
 			want:   400,
-			errMsg: "Malformed request.\n",
+			errMsg: "Malformed request.",
 		},
 		{
 			name: "Getting value from the empty storage",
@@ -193,7 +193,7 @@ func Test_closure(t *testing.T) {
 				},
 			},
 			want:   404,
-			errMsg: "There is no record in the storage for key 'key1'.\n",
+			errMsg: "There is no record in the storage for key 'key1'.",
 		},
 		{
 			name: "Deleting from the empty storage",
@@ -209,7 +209,7 @@ func Test_closure(t *testing.T) {
 				},
 			},
 			want:   404,
-			errMsg: "There is no record in the storage for key '%v'.\n",
+			errMsg: "There is no record in the storage for key '%v'.",
 		},
 		{
 			name: "Setting value with empty key",
@@ -225,7 +225,7 @@ func Test_closure(t *testing.T) {
 				},
 			},
 			want:   400,
-			errMsg: "Malformed request.\n",
+			errMsg: "Malformed request.",
 		},
 		{
 			name: "URL keyword is incorrect",
@@ -241,7 +241,7 @@ func Test_closure(t *testing.T) {
 				},
 			},
 			want:   400,
-			errMsg: "Malformed request.\n",
+			errMsg: "Malformed request.",
 		},
 		{
 			name: "Correct setting the value by its key",
@@ -273,7 +273,7 @@ func Test_closure(t *testing.T) {
 				r: reqBad,
 			},
 			want:   400,
-			errMsg: "Malformed request.\n",
+			errMsg: "Malformed request.",
 		},
 	}
 	for _, tt := range tests {
