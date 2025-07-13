@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"math/rand"
@@ -11,28 +12,32 @@ import (
 )
 
 const (
-	baseURL    = "http://localhost:8080/key"
-	numWorkers = 3
-	numReqs    = 1000
+	baseURL           = "http://localhost:8080/key"
+	defaultNumWorkers = 3
+	defaultTotalReqs  = 1000
 )
 
 func main() {
-	var wg sync.WaitGroup
-	wg.Add(numWorkers)
+	numWorkers := flag.Int("workers", defaultNumWorkers, "Number of workers (concurrency) running in parallel")
+	totalReqs := flag.Int("reqs", defaultTotalReqs, "Requests per worker")
+	flag.Parse()
 
-	for i := 0; i < numWorkers; i++ {
-		go worker(i, &wg)
+	var wg sync.WaitGroup
+	wg.Add(*numWorkers)
+	fmt.Printf("Running with concurrency=%v\n", *numWorkers)
+	for i := 0; i < *numWorkers; i++ {
+		go worker(i, *totalReqs, &wg)
 	}
 
 	wg.Wait()
 	fmt.Println("All workers completed")
 }
 
-func worker(id int, wg *sync.WaitGroup) {
+func worker(id, numReqs int, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	client := &http.Client{Timeout: 10 * time.Second}
-
+	fmt.Printf("Starting worker %v with %v requests ...\n", id, numReqs)
 	for i := 0; i < numReqs; i++ {
 		key := fmt.Sprintf("key_%d_%d", id, rand.Intn(1000))
 		value := fmt.Sprintf("%d", time.Now().Unix())
