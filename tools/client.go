@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"sync"
 	"time"
@@ -43,7 +45,8 @@ func worker(id, numReqs int, wg *sync.WaitGroup) {
 		value := fmt.Sprintf("%d", time.Now().Unix())
 
 		// Store/update value (form data)
-		if err := storeValue(client, key, value); err != nil {
+		_, err := storeValue(client, key, value)
+		if err != nil {
 			fmt.Printf("Worker %d: error storing key %s: %v\n", id, key, err)
 			continue
 		}
@@ -66,21 +69,31 @@ func worker(id, numReqs int, wg *sync.WaitGroup) {
 	}
 }
 
-func storeValue(client *http.Client, key, value string) error {
+func storeValue(client *http.Client, key, value string) (time.Duration, error) {
+	api_url := baseURL + "/" + key
 	formData := url.Values{}
 	formData.Set("value", value)
 
-	resp, err := client.PostForm(baseURL+"/"+key, formData)
-	if err != nil {
-		return err
+	var t0 time.Time
+	trace := &httptrace.ClientTrace{
+		DNSStart: func(_ httptrace.DNSStartInfo) { t0 = time.Now() },
 	}
-	defer resp.Body.Close()
+
+	req, _ := http.NewRequest(http.MethodPost, api_url, bytes.NewBufferString(formData.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	resp, err := client.Do(req)
+	if err != nil {
+		return time.Duration(0), err
+	}
+	resp.Body.Close()
+	diff := time.Since(t0)
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("status %d", resp.StatusCode)
+		return time.Duration(0), fmt.Errorf("status %d", resp.StatusCode)
 	}
 
-	return nil
+	return diff, nil
 }
 
 func getValue(client *http.Client, key, refValue string) error {
