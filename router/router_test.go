@@ -113,6 +113,7 @@ func Test_getKeyFromURL(t *testing.T) {
 
 type myResponseWriter struct {
 	code int
+	msg  []byte
 }
 
 func (resp *myResponseWriter) Header() http.Header {
@@ -125,8 +126,8 @@ func (resp *myResponseWriter) WriteHeader(code int) {
 }
 
 func (resp *myResponseWriter) Write(inp []byte) (int, error) {
-	var er error
-	return int(1), er
+	resp.msg = inp
+	return len(inp), nil
 }
 
 func (resp *myResponseWriter) getCode() int {
@@ -156,10 +157,11 @@ func Test_closure(t *testing.T) {
 		r *http.Request
 	}
 	tests := []struct {
-		name string
-		args args
-		want int // код ошибки
-		text string
+		name   string
+		args   args
+		want   int    // код ошибки
+		errMsg string // error text
+		text   string
 	}{
 		{
 			name: "Incorrect HTTP method (verb)",
@@ -174,7 +176,8 @@ func Test_closure(t *testing.T) {
 					},
 				},
 			},
-			want: 400,
+			want:   400,
+			errMsg: "Malformed request",
 		},
 		{
 			name: "Getting value from the empty storage",
@@ -189,7 +192,8 @@ func Test_closure(t *testing.T) {
 					},
 				},
 			},
-			want: 404,
+			want:   404,
+			errMsg: "There is no record in the storage for key 'key1'",
 		},
 		{
 			name: "Deleting from the empty storage",
@@ -204,7 +208,8 @@ func Test_closure(t *testing.T) {
 					},
 				},
 			},
-			want: 404,
+			want:   404,
+			errMsg: "There is no record in the storage for key '" + correctKey + "'",
 		},
 		{
 			name: "Setting value with empty key",
@@ -219,7 +224,8 @@ func Test_closure(t *testing.T) {
 					},
 				},
 			},
-			want: 400,
+			want:   400,
+			errMsg: "Malformed request",
 		},
 		{
 			name: "URL keyword is incorrect",
@@ -234,7 +240,8 @@ func Test_closure(t *testing.T) {
 					},
 				},
 			},
-			want: 400,
+			want:   400,
+			errMsg: "Malformed request",
 		},
 		{
 			name: "Correct setting the value by its key",
@@ -265,7 +272,8 @@ func Test_closure(t *testing.T) {
 				w: writer,
 				r: reqBad,
 			},
-			want: 400,
+			want:   400,
+			errMsg: "Malformed request",
 		},
 	}
 	for _, tt := range tests {
@@ -275,8 +283,9 @@ func Test_closure(t *testing.T) {
 
 			handler(tt.args.w, tt.args.r)
 			got := writer.getCode()
-			if got != tt.want {
-				t.Errorf("urlHandler() got = %v, want %v", got, tt.want)
+			msg := writer.msg
+			if got != tt.want || string(msg) != tt.errMsg {
+				t.Errorf("GetURLrouter() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

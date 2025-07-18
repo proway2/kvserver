@@ -27,13 +27,6 @@ const (
 	firstPart = "key"
 )
 
-var httpStatusCodeMessages = map[int]string{
-	200: "",
-	400: "400 Malformed request.\n",
-	404: "404 There is no record in the storage for key '%v'.\n",
-	500: "500 Internal storage error.\n",
-}
-
 // GetURLrouter - возвращает функцию маршрутизатор HTTP запросов в зависимости от типа.
 func GetURLrouter(stor readerWriter) func(
 	w http.ResponseWriter, r *http.Request,
@@ -42,14 +35,14 @@ func GetURLrouter(stor readerWriter) func(
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyName, ok := getKeyFromURL(r.URL.Path)
 		if !ok {
-			w.WriteHeader(400) // Bad request
-			fmt.Fprint(w, httpStatusCodeMessages[400])
+			w.WriteHeader(http.StatusBadRequest) // Bad request
+			fmt.Fprint(w, getMessage(http.StatusBadRequest, ""))
 			return
 		}
 		reqHandler, isHandlerExists := requestFactory(r.Method)
 		if !isHandlerExists {
-			w.WriteHeader(400) // Bad request
-			fmt.Fprint(w, httpStatusCodeMessages[400])
+			w.WriteHeader(http.StatusBadRequest) // Bad request
+			fmt.Fprint(w, getMessage(http.StatusBadRequest, ""))
 			return
 		}
 		val, code := reqHandler(stor, keyName, r)
@@ -88,12 +81,12 @@ func methodGET(stor readerWriter, key string, r *http.Request) (string, int) {
 	// get the value by its key
 	val, err := stor.Get(key)
 	if err != nil {
-		return httpStatusCodeMessages[500], 500
+		return getMessage(http.StatusInternalServerError, key), http.StatusInternalServerError
 	}
 	if val == nil {
 		// either error occurred or key is not found in the storage (code 404)
-		code = 404
-		val = []byte(fmt.Sprintf(httpStatusCodeMessages[code], key))
+		code = http.StatusNotFound
+		val = []byte(getMessage(http.StatusNotFound, key))
 	}
 	return string(val), code
 }
@@ -103,7 +96,7 @@ func methodPOST(stor readerWriter, key string, r *http.Request) (string, int) {
 	value := r.PostFormValue(valueFormFieldName)
 	postProcessingMethod := postMethodFactory(len(r.Form))
 	httpCode := postProcessingMethod(stor, key, value)
-	return httpStatusCodeMessages[httpCode], httpCode
+	return getMessage(httpCode, key), httpCode
 }
 
 func postMethodFactory(formLen int) func(storage readerWriter, key, value string) int {
@@ -121,14 +114,14 @@ func deleteElementRequest(storage readerWriter, key, value string) int {
 	delStatus, err := storage.Delete(key)
 	if err != nil {
 		// something went wrong with the storage
-		return 500
+		return http.StatusInternalServerError
 	}
 	if delStatus {
 		// element deleted successfully
-		return 200
+		return http.StatusOK
 	}
 	// element was not found and is not deleted
-	return 404
+	return http.StatusNotFound
 }
 
 func setElementRequest(storage readerWriter, key, value string) int {
@@ -136,10 +129,25 @@ func setElementRequest(storage readerWriter, key, value string) int {
 	err := storage.Set(key, value)
 	if err != nil {
 		// something went wrong with the storage
-		return 500
+		return http.StatusInternalServerError
 	}
 	if value != "" {
-		return 200
+		return http.StatusOK
 	}
-	return 400
+	return http.StatusBadRequest
+}
+
+func getMessage(code int, key string) string {
+	switch code {
+	case http.StatusOK:
+		return ""
+	case http.StatusBadRequest:
+		return "Malformed request"
+	case http.StatusNotFound:
+		return fmt.Sprintf("There is no record in the storage for key '%v'", key)
+	case http.StatusInternalServerError:
+		return "Internal storage error"
+	default:
+		return ""
+	}
 }
