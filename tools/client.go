@@ -21,18 +21,24 @@ const (
 
 func main() {
 	numWorkers := flag.Int("workers", defaultNumWorkers, "Number of workers (concurrency) running in parallel")
-	totalReqs := flag.Int("reqs", defaultTotalReqs, "Requests per worker")
+	reqsPerWorker := flag.Int("reqs", defaultTotalReqs, "Requests per worker")
 	flag.Parse()
 
 	var wg sync.WaitGroup
 	wg.Add(*numWorkers)
 	fmt.Printf("Running with concurrency=%v\n", *numWorkers)
+	t0 := time.Now()
 	for i := 0; i < *numWorkers; i++ {
-		go worker(i, *totalReqs, &wg)
+		go worker(i, *reqsPerWorker, &wg)
 	}
 
 	wg.Wait()
+	t1 := time.Since(t0)
 	fmt.Println("All workers completed")
+	totalReqs := (*numWorkers) * (*reqsPerWorker)
+	// t1 is of type time.Duration which is int64 and represents nanoseconds
+	rps := float32(totalReqs) / (float32(t1) / 1e9)
+	fmt.Printf("Requests=%v, elapsed=%v, %v rps\n", totalReqs, t1, rps)
 }
 
 func worker(id, numReqs int, wg *sync.WaitGroup) {
